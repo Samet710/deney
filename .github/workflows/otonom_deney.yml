@@ -25,9 +25,9 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Gerekli Paketleri Kur
-        run: |
-          pip install astunparse
+       - name: Test Ortamini Kur
+  run: |
+    pip install pytest
 
       - name: Mavi ve Kırmızı Döngüsünü Çalıştır
         env:
