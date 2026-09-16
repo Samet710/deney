@@ -34,6 +34,16 @@ class Oyuncu:
         envanter_puani = len(self.envanter) * 25
         toplam_puan = self.xp + seviye_puani + envanter_puani
         return {'oyuncu': self.isim, 'gelisim_puani': toplam_puan, 'seviye_katkisi': seviye_puani, 'xp_katkisi': self.xp, 'envanter_katkisi': envanter_puani}
+
+    def gelisim_uygulamasi(self):
+        envanter_etkisi = len(self.envanter) * 10
+        temel_odul = self.seviye * 15
+        kazanilan_xp = temel_odul + envanter_etkisi
+        eski_seviye = self.seviye
+        self.xp += kazanilan_xp
+        while self.xp >= self.seviye * 100:
+            self.seviye += 1
+        return {'oyuncu': self.isim, 'kazanilan_xp': kazanilan_xp, 'toplam_xp': self.xp, 'eski_seviye': eski_seviye, 'yeni_seviye': self.seviye, 'seviye_atlama_sayisi': self.seviye - eski_seviye, 'envanter_etkisi': envanter_etkisi}
 if __name__ == '__main__':
     hero = Oyuncu()
     hero.durum_raporu()
