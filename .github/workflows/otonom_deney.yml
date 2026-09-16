@@ -10,9 +10,11 @@ permissions:
 
 jobs:
   run-experiment:
+
     runs-on: ubuntu-latest
 
     steps:
+
       - name: Depoyu Çek
         uses: actions/checkout@v4
         with:
@@ -25,7 +27,7 @@ jobs:
 
       - name: Mavi ve Kırmızı Döngüsünü Çalıştır
         env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
           python mavi_kirmizi.py
 
