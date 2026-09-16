@@ -24,6 +24,10 @@ class Oyuncu:
             self.seviye += 1
             seviye_atlandi += 1
         return seviye_atlandi
+
+    def ilerleme_ozeti(self):
+        hedef_xp = self.seviye * 100
+        return {'isim': self.isim, 'seviye': self.seviye, 'xp': self.xp, 'sonraki_seviye_xp': hedef_xp, 'kalan_xp': max(0, hedef_xp - self.xp), 'envanter_sayisi': len(self.envanter)}
 if __name__ == '__main__':
     hero = Oyuncu()
     hero.durum_raporu()
