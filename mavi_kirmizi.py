@@ -11,19 +11,39 @@ SARI_SISTEM_FILE = "sari_sistem.py"
 MAX_GENERATIONS = 50
 MAX_CODE_LINES = 35
 
+
+# ============================================================
+# NESİL SAYACI
+# ============================================================
+
 count = 0
 
 if os.path.exists(COUNTER_FILE):
     with open(COUNTER_FILE, "r", encoding="utf-8") as f:
         content = f.read().strip()
+
         if content.isdigit():
             count = int(content)
 
+
 if count >= MAX_GENERATIONS:
-    print(f"Deney {MAX_GENERATIONS} nesil sınırına ulaştı.")
+    print(
+        f"Deney {MAX_GENERATIONS} nesil sınırına ulaştı."
+    )
     sys.exit(0)
 
-print(f"--- Deney Adımı {count + 1}/{MAX_GENERATIONS} Başlatılıyor ---")
+
+generation = count + 1
+
+print(
+    f"--- Deney Adımı "
+    f"{generation}/{MAX_GENERATIONS} Başlatılıyor ---"
+)
+
+
+# ============================================================
+# API ANAHTARI
+# ============================================================
 
 api_key = os.getenv("OPENAI_API_KEY", "").strip()
 
@@ -32,33 +52,64 @@ if not api_key:
     sys.exit(1)
 
 
-with open(SARI_SISTEM_FILE, "r", encoding="utf-8") as f:
+# ============================================================
+# SARI SİSTEMİ OKU
+# ============================================================
+
+with open(
+    SARI_SISTEM_FILE,
+    "r",
+    encoding="utf-8"
+) as f:
     mevcut_kod = f.read()
 
+
+# ============================================================
+# MAVİ SİSTEM - GELİŞTİRME İSTEĞİ
+# ============================================================
 
 prompt = f"""
 Sen Mavi Sistem'sin.
 
 Aşağıdaki Python oyun motorunu incele.
 
---- SARI SİSTEM ---
+--- SARI SİSTEM BAŞLANGICI ---
+
 {mevcut_kod}
+
 --- SARI SİSTEM SONU ---
 
-Bu sistem için küçük ama gerçek bir geliştirme yap.
+Görevin:
+Sisteme küçük fakat gerçek bir geliştirme eklemek.
 
 Kurallar:
-1. Sadece Python kodu döndür.
+
+1. Yalnızca Python kodu üret.
 2. Markdown kullanma.
 3. Açıklama yazma.
 4. En fazla {MAX_CODE_LINES} satır kod üret.
-5. Yeni kod mevcut Oyuncu sınıfına eklenebilecek bir metot olmalı.
-6. Mevcut özellikleri bozmamalı.
-7. Kod çalışabilir olmalı.
+5. Tam olarak BİR yeni metot üret.
+6. Metot Oyuncu sınıfının içine eklenebilir olmalı.
+7. İlk parametre kesinlikle self olmalı.
+8. Mevcut özellikleri bozmamalı.
+9. Metot kendi başına anlamlı bir özellik sağlamalı.
+10. Yalnızca metodun kendisini döndür.
 
-Yalnızca yeni metodu döndür.
+Örnek:
+
+def esya_ekle(self, esya):
+    if esya is None:
+        raise ValueError("Eşya boş olamaz.")
+
+    self.envanter.append(esya)
+
+Yalnızca kod döndür.
 """
 
+
+# ============================================================
+# OPENAI RESPONSES API
+# ============================================================
 
 url = "https://api.openai.com/v1/responses"
 
@@ -68,6 +119,7 @@ payload = {
 }
 
 data = json.dumps(payload).encode("utf-8")
+
 
 request = urllib.request.Request(
     url,
@@ -81,13 +133,22 @@ request = urllib.request.Request(
 
 
 try:
-    with urllib.request.urlopen(request, timeout=60) as response:
+
+    with urllib.request.urlopen(
+        request,
+        timeout=60
+    ) as response:
+
         response_data = json.loads(
             response.read().decode("utf-8")
         )
 
 except urllib.error.HTTPError as e:
-    error_body = e.read().decode("utf-8", errors="replace")
+
+    error_body = e.read().decode(
+        "utf-8",
+        errors="replace"
+    )
 
     print("OpenAI API Hatası!")
     print(f"HTTP Kod: {e.code}")
@@ -96,15 +157,29 @@ except urllib.error.HTTPError as e:
     sys.exit(1)
 
 except Exception as e:
-    print(f"Mavi Sistem Hata Aldı: {e}")
+
+    print(
+        f"Mavi Sistem bağlantı hatası: {e}"
+    )
+
     sys.exit(1)
 
 
-try:
-    generated_code = response_data["output"][0]["content"][0]["text"]
+# ============================================================
+# OPENAI CEVABINDAN METNİ AL
+# ============================================================
 
-except (KeyError, IndexError, TypeError):
-    print("OpenAI cevabı beklenen formatta değil.")
+generated_code = response_data.get(
+    "output_text"
+)
+
+
+if not generated_code:
+
+    print(
+        "OpenAI cevabında output_text bulunamadı."
+    )
+
     print(
         json.dumps(
             response_data,
@@ -112,11 +187,14 @@ except (KeyError, IndexError, TypeError):
             ensure_ascii=False
         )
     )
+
     sys.exit(1)
 
 
 generated_code = generated_code.strip()
 
+
+# Markdown temizliği
 generated_code = (
     generated_code
     .replace("```python", "")
@@ -125,79 +203,276 @@ generated_code = (
 )
 
 
-line_count = len(generated_code.splitlines())
+print("Mavi Sistem: Kod üretildi.")
+print(generated_code)
+
+
+# ============================================================
+# KIRMIZI SİSTEM - SATIR KONTROLÜ
+# ============================================================
+
+line_count = len(
+    generated_code.splitlines()
+)
 
 print(
-    f"Mavi Sistem kod üretti: "
+    f"Kırmızı Sistem: "
     f"{line_count} satır."
 )
 
 
 if line_count > MAX_CODE_LINES:
+
     print(
-        f"Kırmızı Sistem reddetti: "
-        f"{line_count} > {MAX_CODE_LINES} satır."
+        "Kırmızı Sistem REDDETTİ: "
+        f"{line_count} > {MAX_CODE_LINES}"
     )
+
     sys.exit(1)
 
+
+# ============================================================
+# KIRMIZI SİSTEM - SYNTAX KONTROLÜ
+# ============================================================
 
 try:
-    tree = ast.parse(generated_code)
+
+    tree = ast.parse(
+        generated_code
+    )
 
 except SyntaxError as e:
+
     print(
-        f"Kırmızı Sistem reddetti: "
-        f"Syntax hatası -> {e}"
+        "Kırmızı Sistem REDDETTİ:"
     )
+
+    print(
+        f"Syntax hatası: {e}"
+    )
+
     sys.exit(1)
 
+
+# ============================================================
+# KIRMIZI SİSTEM - SADECE 1 FONKSİYON
+# ============================================================
 
 functions = [
     node
     for node in tree.body
     if isinstance(
         node,
-        (ast.FunctionDef, ast.AsyncFunctionDef)
+        (
+            ast.FunctionDef,
+            ast.AsyncFunctionDef
+        )
     )
 ]
 
 
 if len(functions) != 1:
+
     print(
-        "Kırmızı Sistem reddetti: "
-        "Tam olarak bir fonksiyon bekleniyordu."
+        "Kırmızı Sistem REDDETTİ:"
     )
+
+    print(
+        "Tam olarak bir fonksiyon "
+        "bekleniyordu."
+    )
+
     sys.exit(1)
 
 
 new_function = functions[0]
 
+
+# ============================================================
+# KIRMIZI SİSTEM - SELF KONTROLÜ
+# ============================================================
+
 if not new_function.args.args:
+
     print(
-        "Kırmızı Sistem reddetti: "
-        "self parametresi yok."
+        "Kırmızı Sistem REDDETTİ:"
     )
+
+    print(
+        "Fonksiyon self parametresi içermiyor."
+    )
+
     sys.exit(1)
 
 
-print("Kırmızı Sistem: Temel denetimler başarılı.")
+first_argument = (
+    new_function.args.args[0].arg
+)
 
 
-with open(SARI_SISTEM_FILE, "a", encoding="utf-8") as f:
-    f.write(
-        "\n\n"
-        f"# --- Geliştirme Adımı {count + 1} ---\n"
-        "# Mavi tarafından üretildi, Kırmızı tarafından onaylandı.\n"
-        + generated_code
-        + "\n"
+if first_argument != "self":
+
+    print(
+        "Kırmızı Sistem REDDETTİ:"
     )
 
+    print(
+        "İlk parametre self olmalı."
+    )
 
-with open(COUNTER_FILE, "w", encoding="utf-8") as f:
-    f.write(str(count + 1))
+    sys.exit(1)
 
 
 print(
-    f"Sarı Sistem güncellendi. "
-    f"Nesil: {count + 1}/{MAX_GENERATIONS}"
+    "Kırmızı Sistem: "
+    "Temel kontroller başarılı."
+)
+
+
+# ============================================================
+# MAVİ'NİN ÜRETTİĞİ METODU AL
+# ============================================================
+
+method_source = generated_code.rstrip()
+
+
+# ============================================================
+# SARI SİSTEMİ AST İLE GÜNCELLE
+# ============================================================
+
+with open(
+    SARI_SISTEM_FILE,
+    "r",
+    encoding="utf-8"
+) as f:
+
+    source = f.read()
+
+
+module = ast.parse(source)
+
+
+player_class = None
+
+
+for node in module.body:
+
+    if (
+        isinstance(node, ast.ClassDef)
+        and node.name == "Oyuncu"
+    ):
+        player_class = node
+        break
+
+
+if player_class is None:
+
+    print(
+        "Kırmızı Sistem REDDETTİ:"
+    )
+
+    print(
+        "Oyuncu sınıfı bulunamadı."
+    )
+
+    sys.exit(1)
+
+
+# Metot gövdesini parse et
+method_tree = ast.parse(
+    method_source
+)
+
+new_method_node = method_tree.body[0]
+
+
+# Aynı isimli metot varsa değiştir.
+# Yoksa yeni metot ekle.
+
+new_methods = []
+
+replaced = False
+
+for node in player_class.body:
+
+    if (
+        isinstance(node, ast.FunctionDef)
+        and node.name == new_method_node.name
+    ):
+
+        new_methods.append(
+            new_method_node
+        )
+
+        replaced = True
+
+    else:
+
+        new_methods.append(node)
+
+
+if not replaced:
+
+    new_methods.append(
+        new_method_node
+    )
+
+
+player_class.body = new_methods
+
+
+# Python kodunu tekrar oluştur
+try:
+
+    import astunparse
+
+except ImportError:
+
+    print(
+        "astunparse paketi gerekli."
+    )
+
+    sys.exit(1)
+
+
+new_source = astunparse.unparse(
+    module
+)
+
+
+# ============================================================
+# SARI SİSTEMİ KAYDET
+# ============================================================
+
+with open(
+    SARI_SISTEM_FILE,
+    "w",
+    encoding="utf-8"
+) as f:
+
+    f.write(new_source)
+
+
+# ============================================================
+# NESİLİ KAYDET
+# ============================================================
+
+with open(
+    COUNTER_FILE,
+    "w",
+    encoding="utf-8"
+) as f:
+
+    f.write(
+        str(generation)
+    )
+
+
+print(
+    "Sarı Sistem başarıyla güncellendi."
+)
+
+print(
+    f"Mevcut nesil: "
+    f"{generation}/{MAX_GENERATIONS}"
 )
