@@ -25,10 +25,10 @@ if count >= MAX_GENERATIONS:
 
 print(f"--- Deney Adımı {count + 1}/{MAX_GENERATIONS} Başlatılıyor ---")
 
-api_key = os.getenv("GEMINI_API_KEY", "").strip()
+api_key = os.getenv("OPENAI_API_KEY", "").strip()
 
 if not api_key:
-    print("Hata: GEMINI_API_KEY bulunamadı.")
+    print("Hata: OPENAI_API_KEY bulunamadı.")
     sys.exit(1)
 
 
@@ -39,48 +39,32 @@ with open(SARI_SISTEM_FILE, "r", encoding="utf-8") as f:
 prompt = f"""
 Sen Mavi Sistem'sin.
 
-Aşağıdaki Python oyun motorunu incele:
+Aşağıdaki Python oyun motorunu incele.
 
 --- SARI SİSTEM ---
 {mevcut_kod}
 --- SARI SİSTEM SONU ---
 
-Amaç:
-Bu sistemi küçük ama gerçek bir geliştirmeyle iyileştir.
+Bu sistem için küçük ama gerçek bir geliştirme yap.
 
 Kurallar:
-1. Yalnızca Python kodu döndür.
+1. Sadece Python kodu döndür.
 2. Markdown kullanma.
 3. Açıklama yazma.
 4. En fazla {MAX_CODE_LINES} satır kod üret.
-5. Kod mevcut Oyuncu sınıfını geliştiren bir özellik olmalı.
-6. Kod doğrudan mevcut Oyuncu sınıfına eklenebilecek bir metot olmalı.
-7. Mevcut özellikleri bozma.
-
-Örnek biçim:
-
-def yeni_metot(self, ...):
-    ...
+5. Yeni kod mevcut Oyuncu sınıfına eklenebilecek bir metot olmalı.
+6. Mevcut özellikleri bozmamalı.
+7. Kod çalışabilir olmalı.
 
 Yalnızca yeni metodu döndür.
 """
 
 
-url = (
-    "https://generativelanguage.googleapis.com/"
-    "v1beta/models/gemini-2.5-flash:generateContent"
-)
+url = "https://api.openai.com/v1/responses"
 
 payload = {
-    "contents": [
-        {
-            "parts": [
-                {
-                    "text": prompt
-                }
-            ]
-        }
-    ]
+    "model": "gpt-5.6-luna",
+    "input": prompt
 }
 
 data = json.dumps(payload).encode("utf-8")
@@ -90,10 +74,11 @@ request = urllib.request.Request(
     data=data,
     headers={
         "Content-Type": "application/json",
-        "x-goog-api-key": api_key
+        "Authorization": f"Bearer {api_key}"
     },
     method="POST"
 )
+
 
 try:
     with urllib.request.urlopen(request, timeout=60) as response:
@@ -104,7 +89,7 @@ try:
 except urllib.error.HTTPError as e:
     error_body = e.read().decode("utf-8", errors="replace")
 
-    print("Gemini API Hatası!")
+    print("OpenAI API Hatası!")
     print(f"HTTP Kod: {e.code}")
     print(f"Sunucu cevabı: {error_body}")
 
@@ -116,28 +101,36 @@ except Exception as e:
 
 
 try:
-    generated_code = (
-        response_data["candidates"][0]
-        ["content"]["parts"][0]["text"]
+    generated_code = response_data["output"][0]["content"][0]["text"]
+
+except (KeyError, IndexError, TypeError):
+    print("OpenAI cevabı beklenen formatta değil.")
+    print(
+        json.dumps(
+            response_data,
+            indent=2,
+            ensure_ascii=False
+        )
     )
-except (KeyError, IndexError) as e:
-    print("Gemini cevabı beklenen formatta değil.")
-    print(json.dumps(response_data, indent=2, ensure_ascii=False))
     sys.exit(1)
 
 
 generated_code = generated_code.strip()
 
-generated_code = generated_code.replace(
-    "```python", ""
-).replace(
-    "```", ""
-).strip()
+generated_code = (
+    generated_code
+    .replace("```python", "")
+    .replace("```", "")
+    .strip()
+)
 
 
 line_count = len(generated_code.splitlines())
 
-print(f"Mavi Sistem kod üretti: {line_count} satır.")
+print(
+    f"Mavi Sistem kod üretti: "
+    f"{line_count} satır."
+)
 
 
 if line_count > MAX_CODE_LINES:
@@ -152,15 +145,22 @@ try:
     tree = ast.parse(generated_code)
 
 except SyntaxError as e:
-    print(f"Kırmızı Sistem reddetti: Syntax hatası -> {e}")
+    print(
+        f"Kırmızı Sistem reddetti: "
+        f"Syntax hatası -> {e}"
+    )
     sys.exit(1)
 
 
 functions = [
     node
     for node in tree.body
-    if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+    if isinstance(
+        node,
+        (ast.FunctionDef, ast.AsyncFunctionDef)
+    )
 ]
+
 
 if len(functions) != 1:
     print(
@@ -172,8 +172,11 @@ if len(functions) != 1:
 
 new_function = functions[0]
 
-if new_function.args.args == []:
-    print("Kırmızı Sistem reddetti: self parametresi yok.")
+if not new_function.args.args:
+    print(
+        "Kırmızı Sistem reddetti: "
+        "self parametresi yok."
+    )
     sys.exit(1)
 
 
