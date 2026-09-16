@@ -2,24 +2,33 @@ import os
 import sys
 import ast
 import json
+import shutil
+import tempfile
+import subprocess
 import urllib.request
 import urllib.error
 
+
 COUNTER_FILE = "counter.txt"
 SARI_SISTEM_FILE = "sari_sistem.py"
+TEST_FILE = "test_sari.py"
 
 MAX_GENERATIONS = 50
 MAX_CODE_LINES = 35
 
 
 # ============================================================
-# 1. NESİL SAYACINI OKU
+# 1. NESİL
 # ============================================================
 
 count = 0
 
 if os.path.exists(COUNTER_FILE):
-    with open(COUNTER_FILE, "r", encoding="utf-8") as f:
+    with open(
+        COUNTER_FILE,
+        "r",
+        encoding="utf-8"
+    ) as f:
         content = f.read().strip()
 
         if content.isdigit():
@@ -36,27 +45,32 @@ if count >= MAX_GENERATIONS:
 generation = count + 1
 
 print()
-print("=" * 50)
+print("=" * 55)
 print(
     f"MAVİ-KIRMIZI DENEYİ "
     f"{generation}/{MAX_GENERATIONS}"
 )
-print("=" * 50)
+print("=" * 55)
 
 
 # ============================================================
-# 2. OPENAI API ANAHTARINI AL
+# 2. API ANAHTARI
 # ============================================================
 
-api_key = os.getenv("OPENAI_API_KEY", "").strip()
+api_key = os.getenv(
+    "OPENAI_API_KEY",
+    ""
+).strip()
 
 if not api_key:
-    print("HATA: OPENAI_API_KEY bulunamadı.")
+    print(
+        "HATA: OPENAI_API_KEY bulunamadı."
+    )
     sys.exit(1)
 
 
 # ============================================================
-# 3. SARI SİSTEMİN MEVCUT KODUNU OKU
+# 3. SARI SİSTEMİ OKU
 # ============================================================
 
 if not os.path.exists(SARI_SISTEM_FILE):
@@ -75,56 +89,60 @@ with open(
 
 
 print(
-    f"Sarı Sistem okundu. "
+    f"Sarı Sistem okundu: "
     f"{len(mevcut_kod.splitlines())} satır."
 )
 
 
 # ============================================================
-# 4. MAVİ SİSTEM - GELİŞTİRME İSTEĞİ
+# 4. MAVİ SİSTEM
 # ============================================================
 
 prompt = f"""
 Sen Mavi Sistem'sin.
 
-Görevin, mevcut Sarı Sistemi küçük ama gerçek
-bir geliştirmeyle iyileştirmektir.
-
-MEVCUT SARI SİSTEM:
+Mevcut Sarı Sistem aşağıdadır:
 
 -------------------------
 {mevcut_kod}
 -------------------------
 
-KURALLAR:
+Görevin sisteme TEK bir yeni özellik eklemektir.
 
-1. Yalnızca Python kodu üret.
+ÇOK ÖNEMLİ KURALLAR:
+
+1. Yalnızca Python kodu döndür.
 2. Markdown kullanma.
 3. Açıklama yazma.
-4. En fazla {MAX_CODE_LINES} satır kod üret.
+4. En fazla {MAX_CODE_LINES} satır üret.
 5. Tam olarak BİR yeni metot üret.
-6. Metot Oyuncu sınıfının içine eklenebilir olmalı.
-7. İlk parametresi kesinlikle self olmalı.
-8. Yeni metot mevcut Oyuncu özellikleriyle uyumlu olmalı.
-9. Mevcut özellikleri bozmamalı.
-10. Metot anlamlı ve kullanılabilir bir özellik eklemeli.
-11. Harici kütüphane kullanma.
-12. Yalnızca metodun kendisini döndür.
+6. İlk parametre kesinlikle self olmalı.
+7. Yeni metodun self dışında PARAMETRESİ OLMAMALI.
+8. Metot Oyuncu sınıfının içine eklenebilir olmalı.
+9. Harici import kullanma.
+10. Mevcut özellikleri bozmamalı.
+11. Metot çağrıldığında hata vermemeli.
+12. Metot gerçek ve anlamlı bir oyun özelliği sağlamalı.
+13. self.seviye, self.xp, self.envanter veya self.isim
+    gibi mevcut oyuncu durumlarından yararlanabilirsin.
+14. Metot yalnızca gösterişli bir print fonksiyonu olmamalı.
+15. Mümkünse oyuncunun durumunu değiştirmeli veya
+    anlamlı bir değer döndürmeli.
+16. Daha önce var olan bir metodun adını kullanma.
 
-ÖRNEK:
+Sadece metodun kendisini döndür.
 
-def esya_ekle(self, esya):
-    if esya is None:
-        raise ValueError("Eşya boş olamaz.")
+Örnek:
 
-    self.envanter.append(esya)
+def can_durumu(self):
+    return max(0, self.xp // 10)
 
-Sadece Python kodunu döndür.
+Yalnızca Python kodunu döndür.
 """
 
 
 # ============================================================
-# 5. OPENAI RESPONSES API
+# 5. OPENAI
 # ============================================================
 
 url = "https://api.openai.com/v1/responses"
@@ -134,7 +152,10 @@ payload = {
     "input": prompt
 }
 
-request_data = json.dumps(payload).encode("utf-8")
+request_data = json.dumps(
+    payload
+).encode("utf-8")
+
 
 request = urllib.request.Request(
     url,
@@ -146,10 +167,6 @@ request = urllib.request.Request(
     method="POST"
 )
 
-
-# ============================================================
-# 6. API ÇAĞRISINI GERÇEKLEŞTİR
-# ============================================================
 
 try:
 
@@ -164,64 +181,29 @@ try:
 
 except urllib.error.HTTPError as e:
 
-    error_body = e.read().decode(
-        "utf-8",
-        errors="replace"
+    print("OPENAI API HATASI")
+    print(f"HTTP kodu: {e.code}")
+
+    print(
+        e.read().decode(
+            "utf-8",
+            errors="replace"
+        )
     )
 
-    print()
-    print("OPENAI API HATASI")
-    print("-" * 40)
-    print(f"HTTP kodu: {e.code}")
-    print(f"Sunucu cevabı: {error_body}")
-    print("-" * 40)
-
-    sys.exit(1)
-
-except urllib.error.URLError as e:
-
-    print()
-    print("AĞ HATASI")
-    print(f"OpenAI'ye bağlanılamadı: {e}")
     sys.exit(1)
 
 except Exception as e:
 
-    print()
-    print("BEKLENMEYEN API HATASI")
-    print(str(e))
-
-    sys.exit(1)
-
-
-# ============================================================
-# 7. OPENAI CEVABINI KONTROL ET
-# ============================================================
-
-if not isinstance(response_data, dict):
-
     print(
-        "HATA: OpenAI cevabı sözlük formatında değil."
-    )
-
-    sys.exit(1)
-
-
-if response_data.get("status") != "completed":
-
-    print(
-        "HATA: OpenAI cevabı tamamlanmamış."
-    )
-
-    print(
-        f"Durum: {response_data.get('status')}"
+        f"OpenAI bağlantı hatası: {e}"
     )
 
     sys.exit(1)
 
 
 # ============================================================
-# 8. output_text BUL
+# 6. OPENAI METNİNİ BUL
 # ============================================================
 
 generated_code = None
@@ -255,29 +237,12 @@ for output_item in response_data.get(
 
 if not generated_code:
 
-    print()
     print(
-        "HATA: OpenAI cevabında "
-        "üretim kodu bulunamadı."
-    )
-
-    print()
-    print("OpenAI cevabı:")
-
-    print(
-        json.dumps(
-            response_data,
-            indent=2,
-            ensure_ascii=False
-        )
+        "HATA: OpenAI kod üretmedi."
     )
 
     sys.exit(1)
 
-
-# ============================================================
-# 9. ÜRETİLEN KODU TEMİZLE
-# ============================================================
 
 generated_code = generated_code.strip()
 
@@ -290,31 +255,24 @@ generated_code = (
 
 
 print()
-print("MAVİ SİSTEM KOD ÜRETTİ")
-print("-" * 40)
+print("MAVİ'NİN ÖNERİSİ")
+print("-" * 55)
 print(generated_code)
-print("-" * 40)
+print("-" * 55)
 
 
 # ============================================================
-# 10. KIRMIZI - SATIR SAYISI KONTROLÜ
+# 7. KIRMIZI - KOD SINIRLARI
 # ============================================================
 
 line_count = len(
     generated_code.splitlines()
 )
 
-print(
-    f"Kırmızı Sistem: "
-    f"{line_count} satır."
-)
-
-
 if line_count == 0:
 
     print(
-        "Kırmızı Sistem REDDETTİ: "
-        "Kod boş."
+        "🔴 RED: Kod boş."
     )
 
     sys.exit(1)
@@ -323,16 +281,15 @@ if line_count == 0:
 if line_count > MAX_CODE_LINES:
 
     print(
-        "Kırmızı Sistem REDDETTİ: "
-        f"{line_count} satır > "
-        f"{MAX_CODE_LINES} satır."
+        f"🔴 RED: {line_count} satır "
+        f"> {MAX_CODE_LINES}."
     )
 
     sys.exit(1)
 
 
 # ============================================================
-# 11. KIRMIZI - PYTHON SYNTAX KONTROLÜ
+# 8. KIRMIZI - AST
 # ============================================================
 
 try:
@@ -344,19 +301,11 @@ try:
 except SyntaxError as e:
 
     print(
-        "Kırmızı Sistem REDDETTİ:"
-    )
-
-    print(
-        f"Syntax hatası: {e}"
+        f"🔴 RED: Syntax hatası: {e}"
     )
 
     sys.exit(1)
 
-
-# ============================================================
-# 12. KIRMIZI - TAM OLARAK BİR FONKSİYON
-# ============================================================
 
 functions = [
     node
@@ -374,12 +323,8 @@ functions = [
 if len(functions) != 1:
 
     print(
-        "Kırmızı Sistem REDDETTİ:"
-    )
-
-    print(
-        "Tam olarak bir fonksiyon "
-        "bekleniyordu."
+        "🔴 RED: Tam olarak bir "
+        "fonksiyon gerekli."
     )
 
     sys.exit(1)
@@ -389,42 +334,39 @@ new_method = functions[0]
 
 
 # ============================================================
-# 13. KIRMIZI - SELF KONTROLÜ
+# 9. SELF KONTROLÜ
 # ============================================================
 
 if not new_method.args.args:
 
     print(
-        "Kırmızı Sistem REDDETTİ:"
-    )
-
-    print(
-        "Metodun parametreleri yok."
+        "🔴 RED: self parametresi yok."
     )
 
     sys.exit(1)
 
 
-first_argument = (
-    new_method.args.args[0].arg
-)
-
-
-if first_argument != "self":
+if new_method.args.args[0].arg != "self":
 
     print(
-        "Kırmızı Sistem REDDETTİ:"
+        "🔴 RED: İlk parametre self olmalı."
     )
 
+    sys.exit(1)
+
+
+if len(new_method.args.args) != 1:
+
     print(
-        "İlk parametre self olmalı."
+        "🔴 RED: self dışında "
+        "parametre kullanılamaz."
     )
 
     sys.exit(1)
 
 
 # ============================================================
-# 14. KIRMIZI - SADECE İZİN VERİLEN ŞEYLER
+# 10. IMPORT KONTROLÜ
 # ============================================================
 
 for node in ast.walk(new_method):
@@ -438,25 +380,15 @@ for node in ast.walk(new_method):
     ):
 
         print(
-            "Kırmızı Sistem REDDETTİ:"
-        )
-
-        print(
-            "Yeni metot harici "
-            "kütüphane import edemez."
+            "🔴 RED: Yeni metot import "
+            "kullanamaz."
         )
 
         sys.exit(1)
 
 
-print(
-    "Kırmızı Sistem: "
-    "Temel kontroller başarılı."
-)
-
-
 # ============================================================
-# 15. SARI SİSTEMİN AST'SİNİ OKU
+# 11. SARI AST'SİNİ OKU
 # ============================================================
 
 try:
@@ -474,18 +406,14 @@ try:
 except Exception as e:
 
     print(
-        "Kırmızı Sistem REDDETTİ:"
-    )
-
-    print(
-        f"Sarı Sistem okunamadı: {e}"
+        f"🔴 RED: Sarı Sistem okunamadı: {e}"
     )
 
     sys.exit(1)
 
 
 # ============================================================
-# 16. OYUNCU SINIFINI BUL
+# 12. OYUNCU SINIFI
 # ============================================================
 
 player_class = None
@@ -504,161 +432,383 @@ for node in module.body:
 if player_class is None:
 
     print(
-        "Kırmızı Sistem REDDETTİ:"
-    )
-
-    print(
-        "Oyuncu sınıfı bulunamadı."
+        "🔴 RED: Oyuncu sınıfı bulunamadı."
     )
 
     sys.exit(1)
 
 
 # ============================================================
-# 17. AYNI METOT VAR MI?
+# 13. METOT ADI
 # ============================================================
 
-existing_method_names = []
-
-for node in player_class.body:
-
+existing_methods = {
+    node.name
+    for node in player_class.body
     if isinstance(
         node,
         (
             ast.FunctionDef,
             ast.AsyncFunctionDef
         )
-    ):
-
-        existing_method_names.append(
-            node.name
-        )
-
-
-if new_method.name in existing_method_names:
-
-    print(
-        "Kırmızı Sistem REDDETTİ:"
     )
+}
+
+
+if new_method.name in existing_methods:
 
     print(
-        f"'{new_method.name}' adlı "
-        "metot zaten mevcut."
+        f"🔴 RED: {new_method.name} "
+        "zaten mevcut."
     )
 
     sys.exit(1)
 
 
 # ============================================================
-# 18. YENİ METODU OYUNCU SINIFINA EKLE
+# 14. ADAY SİSTEMİ OLUŞTUR
 # ============================================================
 
 player_class.body.append(
     new_method
 )
 
-
-# ============================================================
-# 19. DÜZENLENMİŞ KODU AST'DEN GERİ ÜRET
-# ============================================================
-
-try:
-
-    import astunparse
-
-except ImportError:
-
-    print(
-        "HATA: astunparse kurulu değil."
-    )
-
-    sys.exit(1)
-
-
-new_source = astunparse.unparse(
+candidate_source = ast.unparse(
     module
 )
 
 
 # ============================================================
-# 20. KIRMIZI - SON HALİN SYNTAX TESTİ
+# 15. GEÇİCİ DİZİN
 # ============================================================
+
+temp_dir = tempfile.mkdtemp(
+    prefix="mavi_kirmizi_"
+)
+
+candidate_file = os.path.join(
+    temp_dir,
+    SARI_SISTEM_FILE
+)
+
 
 try:
 
-    ast.parse(new_source)
+    with open(
+        candidate_file,
+        "w",
+        encoding="utf-8"
+    ) as f:
 
-except SyntaxError as e:
+        f.write(candidate_source)
+
+
+    # ========================================================
+    # 16. SYNTAX TESTİ
+    # ========================================================
+
+    print()
+    print(
+        "🔴 Syntax testi çalıştırılıyor..."
+    )
+
+    syntax_result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "py_compile",
+            candidate_file
+        ],
+        capture_output=True,
+        text=True
+    )
+
+
+    if syntax_result.returncode != 0:
+
+        print(
+            "🔴 RED: Aday sistem "
+            "syntax testini geçemedi."
+        )
+
+        print(syntax_result.stderr)
+
+        sys.exit(1)
+
 
     print(
-        "Kırmızı Sistem REDDETTİ:"
+        "✅ Syntax testi başarılı."
+    )
+
+
+    # ========================================================
+    # 17. TEMEL ÇALIŞMA TESTİ
+    # ========================================================
+
+    print(
+        "🔴 Temel çalışma testi..."
+    )
+
+    smoke_code = """
+import sys
+
+sys.path.insert(0, sys.argv[1])
+
+from sari_sistem import Oyuncu
+
+oyuncu = Oyuncu()
+
+assert oyuncu.isim
+assert oyuncu.seviye >= 1
+assert oyuncu.xp >= 0
+assert isinstance(oyuncu.envanter, list)
+
+oyuncu.xp_kazan(10)
+
+assert oyuncu.xp >= 10
+
+print("SMOKE_TEST_OK")
+"""
+
+
+    smoke_file = os.path.join(
+        temp_dir,
+        "smoke_test.py"
+    )
+
+    with open(
+        smoke_file,
+        "w",
+        encoding="utf-8"
+    ) as f:
+
+        f.write(smoke_code)
+
+
+    smoke_result = subprocess.run(
+        [
+            sys.executable,
+            smoke_file,
+            temp_dir
+        ],
+        capture_output=True,
+        text=True,
+        cwd=temp_dir
+    )
+
+
+    if smoke_result.returncode != 0:
+
+        print(
+            "🔴 RED: Temel çalışma "
+            "testi başarısız."
+        )
+
+        print(
+            smoke_result.stderr
+        )
+
+        sys.exit(1)
+
+
+    print(
+        "✅ Temel çalışma testi başarılı."
+    )
+
+
+    # ========================================================
+    # 18. TEST DOSYASI VARSA ÇALIŞTIR
+    # ========================================================
+
+    if os.path.exists(TEST_FILE):
+
+        print(
+            "🔴 Mevcut regresyon testleri "
+            "çalıştırılıyor..."
+        )
+
+        candidate_test_file = os.path.join(
+            temp_dir,
+            TEST_FILE
+        )
+
+        shutil.copy2(
+            TEST_FILE,
+            candidate_test_file
+        )
+
+
+        test_result = subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "pytest",
+                "-q",
+                candidate_test_file
+            ],
+            capture_output=True,
+            text=True,
+            cwd=temp_dir
+        )
+
+
+        if test_result.returncode != 0:
+
+            print(
+                "🔴 RED: Regresyon "
+                "testleri başarısız."
+            )
+
+            print(
+                test_result.stdout
+            )
+
+            print(
+                test_result.stderr
+            )
+
+            sys.exit(1)
+
+
+        print(
+            "✅ Regresyon testleri başarılı."
+        )
+
+
+    # ========================================================
+    # 19. YENİ METOT TESTİ
+    # ========================================================
+
+    print(
+        f"🔴 Yeni metot test ediliyor: "
+        f"{new_method.name}"
+    )
+
+
+    new_method_test_code = f"""
+import sys
+
+sys.path.insert(0, sys.argv[1])
+
+from sari_sistem import Oyuncu
+
+oyuncu = Oyuncu()
+
+metot = getattr(
+    oyuncu,
+    "{new_method.name}"
+)
+
+assert callable(metot)
+
+sonuc = metot()
+
+print("NEW_METHOD_OK")
+print(type(sonuc).__name__)
+"""
+
+
+    new_method_test_file = os.path.join(
+        temp_dir,
+        "new_method_test.py"
+    )
+
+    with open(
+        new_method_test_file,
+        "w",
+        encoding="utf-8"
+    ) as f:
+
+        f.write(
+            new_method_test_code
+        )
+
+
+    new_test_result = subprocess.run(
+        [
+            sys.executable,
+            new_method_test_file,
+            temp_dir
+        ],
+        capture_output=True,
+        text=True,
+        cwd=temp_dir
+    )
+
+
+    if new_test_result.returncode != 0:
+
+        print(
+            "🔴 RED: Yeni metot çalışmadı."
+        )
+
+        print(
+            new_test_result.stderr
+        )
+
+        sys.exit(1)
+
+
+    print(
+        "✅ Yeni metot çalışıyor."
+    )
+
+
+    # ========================================================
+    # 20. BAŞARILIYSA SARI'YA AKTAR
+    # ========================================================
+
+    with open(
+        SARI_SISTEM_FILE,
+        "w",
+        encoding="utf-8"
+    ) as f:
+
+        f.write(candidate_source)
+
+
+    with open(
+        COUNTER_FILE,
+        "w",
+        encoding="utf-8"
+    ) as f:
+
+        f.write(
+            str(generation)
+        )
+
+
+    # ========================================================
+    # 21. BAŞARILI
+    # ========================================================
+
+    print()
+    print("=" * 55)
+    print("🟢 DENEY BAŞARILI")
+    print("=" * 55)
+
+    print(
+        f"Nesil: {generation}/{MAX_GENERATIONS}"
     )
 
     print(
-        "Entegre edilmiş Sarı Sistem "
-        "syntax testini geçemedi."
+        f"Yeni metot: {new_method.name}"
     )
 
-    print(e)
-
-    sys.exit(1)
-
-
-print(
-    "Kırmızı Sistem: "
-    "Entegrasyon syntax testi başarılı."
-)
-
-
-# ============================================================
-# 21. SARI SİSTEMİ KAYDET
-# ============================================================
-
-with open(
-    SARI_SISTEM_FILE,
-    "w",
-    encoding="utf-8"
-) as f:
-
-    f.write(new_source)
-
-
-# ============================================================
-# 22. NESİL SAYACINI ARTIR
-# ============================================================
-
-with open(
-    COUNTER_FILE,
-    "w",
-    encoding="utf-8"
-) as f:
-
-    f.write(
-        str(generation)
+    print(
+        "Kırmızı bütün testleri geçti."
     )
 
+    print(
+        "Değişiklik Sarı Sisteme aktarıldı."
+    )
 
-# ============================================================
-# 23. SONUÇ
-# ============================================================
+    print("=" * 55)
 
-print()
-print("=" * 50)
-print("DENEY BAŞARILI")
-print("=" * 50)
 
-print(
-    f"Yeni nesil: "
-    f"{generation}/{MAX_GENERATIONS}"
+finally:
+
+    shutil.rmtree(
+        temp_dir,
+        ignore_errors=True
 )
-
-print(
-    f"Eklenen metot: "
-    f"{new_method.name}"
-)
-
-print(
-    "Sarı Sistem güncellendi."
-)
-
-print("=" * 50)
