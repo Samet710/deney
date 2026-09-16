@@ -20,9 +20,11 @@ if count >= 50:
 
 print(f"--- Deney Adımı {count + 1}/50 Başlatılıyor ---")
 
-api_key = os.getenv("GEMINI_API_KEY")
+raw_api_key = os.getenv("GEMINI_API_KEY", "")
+api_key = raw_api_key.strip("[]'\" \t\n\r")
+
 if not api_key:
-    print("Hata: GEMINI_API_KEY çevre değişkeni bulunamadı.")
+    print("Hata: GEMINI_API_KEY çevre değişkeni bulunamadı veya geçersiz.")
     sys.exit(1)
 
 prompt = (
@@ -32,7 +34,9 @@ prompt = (
     f"KURAL 2: Sadece çalışabilir Python kodu döndür. Açıklama veya markdown tırnakları (```) asla kullanma."
 )
 
-url = "[https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=](https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=)" + api_key
+base_url = "[https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=](https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=)"
+url = (base_url + api_key).strip("[]'\" ")
+
 payload = json.dumps({"contents": [{"parts": [{"text": prompt}]}]}).encode("utf-8")
 req = urllib.request.Request(url, data=payload, headers={"Content-Type": "application/json"})
 
@@ -67,3 +71,4 @@ with open(COUNTER_FILE, "w", encoding="utf-8") as f:
     f.write(str(count + 1))
 
 print(f"Sarı Sistem Başarıyla Güncellendi! Mevcut Seviye: {count + 1}/50")
+    
