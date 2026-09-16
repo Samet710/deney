@@ -25,6 +25,10 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Gerekli Paketleri Kur
+        run: |
+          pip install astunparse
+
       - name: Mavi ve Kırmızı Döngüsünü Çalıştır
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
