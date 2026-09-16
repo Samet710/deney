@@ -1,39 +1,48 @@
-from sari_sistem import Oyuncu
+class Oyuncu:
+
+    def __init__(self, isim="AllStar"):
+        self.isim = isim
+        self.seviye = 1
+        self.xp = 0
+        self.envanter = []
+
+    def xp_kazan(self, miktar):
+        self.xp += miktar
+
+        print(
+            f"{self.isim} {miktar} XP kazandı! "
+            f"Toplam XP: {self.xp}"
+        )
+
+        if self.xp >= self.seviye * 100:
+            self.seviye += 1
+
+            print(
+                "TEBRİKLER! Seviye Atlandı! "
+                f"Yeni Seviye: {self.seviye}"
+            )
+
+    def durum_raporu(self):
+        print(
+            f"\n--- {self.isim} Durum Raporu ---"
+        )
+
+        print(
+            f"Seviye: {self.seviye} | "
+            f"XP: {self.xp}"
+        )
+
+        print(
+            f"Envanter: {self.envanter}\n"
+        )
 
 
-def test_oyuncu_olusturma():
+if __name__ == "__main__":
 
-    oyuncu = Oyuncu()
+    hero = Oyuncu()
 
-    assert oyuncu.isim == "AllStar"
-    assert oyuncu.seviye == 1
-    assert oyuncu.xp == 0
-    assert oyuncu.envanter == []
+    hero.durum_raporu()
 
+    hero.xp_kazan(120)
 
-def test_xp_kazanma():
-
-    oyuncu = Oyuncu()
-
-    oyuncu.xp_kazan(50)
-
-    assert oyuncu.xp == 50
-
-
-def test_envanter():
-
-    oyuncu = Oyuncu()
-
-    assert isinstance(
-        oyuncu.envanter,
-        list
-    )
-
-
-def test_seviye_atlama():
-
-    oyuncu = Oyuncu()
-
-    oyuncu.xp_kazan(120)
-
-    assert oyuncu.seviye >= 2
+    hero.durum_raporu()
