@@ -3,29 +3,42 @@ name: Otonom Mavi Kırmızı Deneyi
 on:
   workflow_dispatch:
   schedule:
-    - cron: '*/20 * * * *'
+    - cron: "*/20 * * * *"
+
+permissions:
+  contents: write
 
 jobs:
   run-experiment:
     runs-on: ubuntu-latest
+
     steps:
       - name: Depoyu Çek
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Python Ortamını Kur
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: "3.11"
 
       - name: Mavi ve Kırmızı Döngüsünü Çalıştır
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        run: python mavi_kirmizi.py
+        run: |
+          python mavi_kirmizi.py
 
       - name: Değişiklikleri Depoya Kaydet
         run: |
-          git config --global user.name "Otonom-Mavi-Kirmizi-Bot"
-          git config --global user.email "bot@github.com"
+          git config user.name "Otonom-Mavi-Kirmizi-Bot"
+          git config user.email "bot@github.com"
+
           git add counter.txt sari_sistem.py
-          git diff --staged --quiet || (git commit -m "Otonom Geliştirme Adımı Tamamlandı" && git push)
-          
+
+          if git diff --staged --quiet; then
+            echo "Kaydedilecek değişiklik yok."
+          else
+            git commit -m "Otonom Geliştirme Adımı Tamamlandı"
+            git push
+          fi
