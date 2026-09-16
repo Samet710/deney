@@ -3,72 +3,198 @@ import sys
 import ast
 import json
 import urllib.request
+import urllib.error
 
 COUNTER_FILE = "counter.txt"
 SARI_SISTEM_FILE = "sari_sistem.py"
-MAX_SATIR_SINIRI = 50
+
+MAX_GENERATIONS = 50
+MAX_CODE_LINES = 35
 
 count = 0
+
 if os.path.exists(COUNTER_FILE):
     with open(COUNTER_FILE, "r", encoding="utf-8") as f:
         content = f.read().strip()
-        count = int(content) if content.isdigit() else 0
+        if content.isdigit():
+            count = int(content)
 
-if count >= 50:
-    print("Mavi-Kırmızı Deneyi hedeflenen 50 geliştirme sınırına ulaştı ve durduruldu.")
+if count >= MAX_GENERATIONS:
+    print(f"Deney {MAX_GENERATIONS} nesil sınırına ulaştı.")
     sys.exit(0)
 
-print(f"--- Deney Adımı {count + 1}/50 Başlatılıyor ---")
+print(f"--- Deney Adımı {count + 1}/{MAX_GENERATIONS} Başlatılıyor ---")
 
-raw_api_key = os.getenv("GEMINI_API_KEY", "")
-api_key = raw_api_key.strip("[]'\" \t\n\r")
+api_key = os.getenv("GEMINI_API_KEY", "").strip()
 
 if not api_key:
-    print("Hata: GEMINI_API_KEY çevre değişkeni bulunamadı veya geçersiz.")
+    print("Hata: GEMINI_API_KEY bulunamadı.")
     sys.exit(1)
 
-prompt = (
-    f"Sen Mavi Sistem'sin. 'sari_sistem.py' içindeki Oyuncu sınıfı veya oyun motoru için {count + 1}. adımda eklenmek üzere "
-    f"KISA ve BAĞIMSIZ bir Python fonksiyonu veya metodu yaz. "
-    f"KURAL 1: Yazdığın kod kesinlikle en fazla 35 satır olmalı. "
-    f"KURAL 2: Sadece çalışabilir Python kodu döndür. Açıklama veya markdown tırnakları (```) asla kullanma."
+
+with open(SARI_SISTEM_FILE, "r", encoding="utf-8") as f:
+    mevcut_kod = f.read()
+
+
+prompt = f"""
+Sen Mavi Sistem'sin.
+
+Aşağıdaki Python oyun motorunu incele:
+
+--- SARI SİSTEM ---
+{mevcut_kod}
+--- SARI SİSTEM SONU ---
+
+Amaç:
+Bu sistemi küçük ama gerçek bir geliştirmeyle iyileştir.
+
+Kurallar:
+1. Yalnızca Python kodu döndür.
+2. Markdown kullanma.
+3. Açıklama yazma.
+4. En fazla {MAX_CODE_LINES} satır kod üret.
+5. Kod mevcut Oyuncu sınıfını geliştiren bir özellik olmalı.
+6. Kod doğrudan mevcut Oyuncu sınıfına eklenebilecek bir metot olmalı.
+7. Mevcut özellikleri bozma.
+
+Örnek biçim:
+
+def yeni_metot(self, ...):
+    ...
+
+Yalnızca yeni metodu döndür.
+"""
+
+
+url = (
+    "https://generativelanguage.googleapis.com/"
+    "v1beta/models/gemini-2.5-flash:generateContent"
 )
 
-base_url = "[https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=](https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=)"
-url = (base_url + api_key).strip("[]'\" ")
+payload = {
+    "contents": [
+        {
+            "parts": [
+                {
+                    "text": prompt
+                }
+            ]
+        }
+    ]
+}
 
-payload = json.dumps({"contents": [{"parts": [{"text": prompt}]}]}).encode("utf-8")
-req = urllib.request.Request(url, data=payload, headers={"Content-Type": "application/json"})
+data = json.dumps(payload).encode("utf-8")
+
+request = urllib.request.Request(
+    url,
+    data=data,
+    headers={
+        "Content-Type": "application/json",
+        "x-goog-api-key": api_key
+    },
+    method="POST"
+)
 
 try:
-    with urllib.request.urlopen(req) as response:
-        res_data = json.loads(response.read().decode("utf-8"))
-        generated_code = res_data["candidates"][0]["content"]["parts"][0]["text"]
-        generated_code = generated_code.replace("```python", "").replace("```", "").strip()
-        print("Mavi Sistem: Kod parçası üretildi.")
+    with urllib.request.urlopen(request, timeout=60) as response:
+        response_data = json.loads(
+            response.read().decode("utf-8")
+        )
+
+except urllib.error.HTTPError as e:
+    error_body = e.read().decode("utf-8", errors="replace")
+
+    print("Gemini API Hatası!")
+    print(f"HTTP Kod: {e.code}")
+    print(f"Sunucu cevabı: {error_body}")
+
+    sys.exit(1)
+
 except Exception as e:
     print(f"Mavi Sistem Hata Aldı: {e}")
     sys.exit(1)
 
-satir_sayisi = len(generated_code.splitlines())
-print(f"Kırmızı Sistem Denetimi: Gelen kod {satir_sayisi} satır.")
-
-if satir_sayisi > MAX_SATIR_SINIRI:
-    print(f"Kırmızı Sistem Reddetti: Kod sınır olan {MAX_SATIR_SINIRI} satırı aştı ({satir_sayisi} satır).")
-    sys.exit(1)
 
 try:
-    ast.parse(generated_code)
-    print("Kırmızı Sistem: Sözdizimi testi başarılı, onaylandı.")
-except SyntaxError as e:
-    print(f"Kırmızı Sistem Reddetti: Sözdizimi hatası var -> {e}")
+    generated_code = (
+        response_data["candidates"][0]
+        ["content"]["parts"][0]["text"]
+    )
+except (KeyError, IndexError) as e:
+    print("Gemini cevabı beklenen formatta değil.")
+    print(json.dumps(response_data, indent=2, ensure_ascii=False))
     sys.exit(1)
 
+
+generated_code = generated_code.strip()
+
+generated_code = generated_code.replace(
+    "```python", ""
+).replace(
+    "```", ""
+).strip()
+
+
+line_count = len(generated_code.splitlines())
+
+print(f"Mavi Sistem kod üretti: {line_count} satır.")
+
+
+if line_count > MAX_CODE_LINES:
+    print(
+        f"Kırmızı Sistem reddetti: "
+        f"{line_count} > {MAX_CODE_LINES} satır."
+    )
+    sys.exit(1)
+
+
+try:
+    tree = ast.parse(generated_code)
+
+except SyntaxError as e:
+    print(f"Kırmızı Sistem reddetti: Syntax hatası -> {e}")
+    sys.exit(1)
+
+
+functions = [
+    node
+    for node in tree.body
+    if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+]
+
+if len(functions) != 1:
+    print(
+        "Kırmızı Sistem reddetti: "
+        "Tam olarak bir fonksiyon bekleniyordu."
+    )
+    sys.exit(1)
+
+
+new_function = functions[0]
+
+if new_function.args.args == []:
+    print("Kırmızı Sistem reddetti: self parametresi yok.")
+    sys.exit(1)
+
+
+print("Kırmızı Sistem: Temel denetimler başarılı.")
+
+
 with open(SARI_SISTEM_FILE, "a", encoding="utf-8") as f:
-    f.write(f"\n\n# --- Geliştirme Adımı {count + 1} ---\n" + generated_code)
+    f.write(
+        "\n\n"
+        f"# --- Geliştirme Adımı {count + 1} ---\n"
+        "# Mavi tarafından üretildi, Kırmızı tarafından onaylandı.\n"
+        + generated_code
+        + "\n"
+    )
+
 
 with open(COUNTER_FILE, "w", encoding="utf-8") as f:
     f.write(str(count + 1))
 
-print(f"Sarı Sistem Başarıyla Güncellendi! Mevcut Seviye: {count + 1}/50")
-    
+
+print(
+    f"Sarı Sistem güncellendi. "
+    f"Nesil: {count + 1}/{MAX_GENERATIONS}"
+)
