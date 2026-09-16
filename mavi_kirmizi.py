@@ -25,7 +25,6 @@ if not api_key:
     print("Hata: GEMINI_API_KEY çevre değişkeni bulunamadı.")
     sys.exit(1)
 
-# MAVI SISTEM: Sıkı kısıtlamalı prompt ile istek atar
 prompt = (
     f"Sen Mavi Sistem'sin. 'sari_sistem.py' içindeki Oyuncu sınıfı veya oyun motoru için {count + 1}. adımda eklenmek üzere "
     f"KISA ve BAĞIMSIZ bir Python fonksiyonu veya metodu yaz. "
@@ -33,7 +32,7 @@ prompt = (
     f"KURAL 2: Sadece çalışabilir Python kodu döndür. Açıklama veya markdown tırnakları (```) asla kullanma."
 )
 
-url = f"[https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=](https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=){api_key}"
+url = "[https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=](https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=)" + api_key
 payload = json.dumps({"contents": [{"parts": [{"text": prompt}]}]}).encode("utf-8")
 req = urllib.request.Request(url, data=payload, headers={"Content-Type": "application/json"})
 
@@ -47,7 +46,6 @@ except Exception as e:
     print(f"Mavi Sistem Hata Aldı: {e}")
     sys.exit(1)
 
-# KIRMIZI SISTEM: Satır sayısı ve Sözdizimi denetimi
 satir_sayisi = len(generated_code.splitlines())
 print(f"Kırmızı Sistem Denetimi: Gelen kod {satir_sayisi} satır.")
 
@@ -62,7 +60,6 @@ except SyntaxError as e:
     print(f"Kırmızı Sistem Reddetti: Sözdizimi hatası var -> {e}")
     sys.exit(1)
 
-# SARI SISTEM: Onaylanan kodu entegre etme
 with open(SARI_SISTEM_FILE, "a", encoding="utf-8") as f:
     f.write(f"\n\n# --- Geliştirme Adımı {count + 1} ---\n" + generated_code)
 
@@ -70,4 +67,3 @@ with open(COUNTER_FILE, "w", encoding="utf-8") as f:
     f.write(str(count + 1))
 
 print(f"Sarı Sistem Başarıyla Güncellendi! Mevcut Seviye: {count + 1}/50")
-      
