@@ -10,10 +10,6 @@ import urllib.error
 from datetime import datetime, timezone
 
 
-# ============================================================
-# AYARLAR
-# ============================================================
-
 COUNTER_FILE = "counter.txt"
 HISTORY_FILE = "history.json"
 
@@ -29,17 +25,63 @@ OPENAI_URL = "https://api.openai.com/v1/responses"
 OPENAI_MODEL = "gpt-5.6-luna"
 
 
-# Testlerde API anahtarını vermiyoruz.
-TEST_ENV = os.environ.copy()
-TEST_ENV.pop("OPENAI_API_KEY", None)
-TEST_ENV.pop("GEMINI_API_KEY", None)
+# ============================================================
+# GÜVENLİK
+# ============================================================
+
+BANNED_NAMES = {
+    "__import__",
+    "__builtins__",
+    "__loader__",
+    "__spec__",
+
+    "eval",
+    "exec",
+    "compile",
+
+    "open",
+    "input",
+
+    "globals",
+    "locals",
+    "vars",
+    "dir",
+
+    "setattr",
+    "delattr",
+    "breakpoint",
+    "help",
+    "memoryview",
+
+    "os",
+    "sys",
+    "subprocess",
+    "socket",
+    "requests",
+    "urllib",
+
+    "pathlib",
+    "shutil",
+    "ctypes",
+
+    "pickle",
+    "marshal"
+}
 
 
 # ============================================================
-# DOSYA YARDIMCILARI
+# TEMEL YARDIMCILAR
 # ============================================================
 
-def oku_sayi(path):
+def now():
+    return datetime.now(
+        timezone.utc
+    ).strftime(
+        "%Y-%m-%d %H:%M:%S UTC"
+    )
+
+
+def read_int(path):
     try:
         with open(
             path,
@@ -48,60 +90,74 @@ def oku_sayi(path):
         ) as f:
             value = f.read().strip()
 
-        return int(value) if value.isdigit() else 0
+        return (
+            int(value)
+            if value.isdigit()
+            else 0
+        )
 
     except Exception:
         return 0
 
 
-def yaz_sayi(path, value):
+def write_int(path, value):
     with open(
         path,
         "w",
         encoding="utf-8"
     ) as f:
-        f.write(str(value))
-
-
-def simdi():
-    return datetime.now(
-        timezone.utc
-    ).strftime(
-        "%Y-%m-%d %H:%M:%S UTC"
-    )
+        f.write(
+            str(value)
+        )
 
 
 # ============================================================
 # GEÇMİŞ
 # ============================================================
 
-def gecmisi_oku():
+def read_history():
+
     try:
+
         with open(
             HISTORY_FILE,
             "r",
             encoding="utf-8"
         ) as f:
+
             data = json.load(f)
 
-        return data if isinstance(
+
+        if isinstance(
             data,
             list
-        ) else []
+        ):
+
+            return data
+
 
     except Exception:
-        return []
+        pass
 
 
-def gecmise_ekle(record):
-    history = gecmisi_oku()
-    history.append(record)
+    return []
+
+
+def add_history(record):
+
+    history = read_history()
+
+    history.append(
+        record
+    )
+
 
     with open(
         HISTORY_FILE,
         "w",
         encoding="utf-8"
     ) as f:
+
         json.dump(
             history,
             f,
@@ -110,44 +166,67 @@ def gecmise_ekle(record):
         )
 
 
-def gecmis_ozeti():
-    history = gecmisi_oku()
+def history_summary():
+
+    history = read_history()
+
 
     if not history:
-        return "Henüz geçmiş deney yok."
 
-    lines = []
+        return (
+            "Henüz geçmiş deney yok."
+        )
 
-    for item in history[-MAX_HISTORY:]:
-        lines.append(
+
+    rows = []
+
+
+    for item in history[
+        -MAX_HISTORY:
+    ]:
+
+        rows.append(
             f"- {item.get('result')} | "
-            f"{item.get('method')} | "
+            f"metot={item.get('method')} | "
             f"fark={item.get('score_difference')} | "
             f"neden={item.get('reason')}"
         )
 
-    return "\n".join(lines)
+
+    return "\n".join(
+        rows
+    )
 
 
 # ============================================================
 # AST
 # ============================================================
 
-def oyuncu_sinifini_bul(tree):
-    for node in ast.walk(tree):
+def find_player(tree):
+
+    for node in ast.walk(
+        tree
+    ):
+
         if (
-            isinstance(node, ast.ClassDef)
+            isinstance(
+                node,
+                ast.ClassDef
+            )
             and node.name == "Oyuncu"
         ):
+
             return node
+
 
     return None
 
 
-def metotlari_bul(oyuncu):
+def player_methods(player):
+
     return [
         node
-        for node in oyuncu.body
+        for node in player.body
         if isinstance(
             node,
             (
@@ -158,50 +237,67 @@ def metotlari_bul(oyuncu):
     ]
 
 
-def openai_metin(response_data):
-    text = response_data.get(
+def response_text(data):
+
+    text = data.get(
         "output_text"
     )
 
-    if isinstance(
-        text,
-        str
-    ) and text.strip():
+
+    if (
+        isinstance(
+            text,
+            str
+        )
+        and text.strip()
+    ):
+
         return text.strip()
 
-    for item in response_data.get(
+
+    for item in data.get(
         "output",
         []
     ):
+
         if item.get(
             "type"
         ) != "message":
+
             continue
+
 
         for content in item.get(
             "content",
             []
         ):
-            if content.get(
-                "type"
-            ) == "output_text":
+
+            if (
+                content.get(
+                    "type"
+                )
+                == "output_text"
+            ):
 
                 text = content.get(
                     "text",
                     ""
                 )
 
+
                 if text:
+
                     return text.strip()
+
 
     return ""
 
 
 # ============================================================
-# PAGES VERİSİ
+# GITHUB PAGES
 # ============================================================
 
-def pages_verisi_yaz(
+def write_pages(
     source,
     generation,
     decision,
@@ -217,61 +313,100 @@ def pages_verisi_yaz(
         exist_ok=True
     )
 
+
     try:
-        tree = ast.parse(source)
-        oyuncu = oyuncu_sinifini_bul(tree)
+
+        tree = ast.parse(
+            source
+        )
+
+        player = find_player(
+            tree
+        )
 
     except Exception:
-        oyuncu = None
+
+        player = None
+
 
     methods = []
 
-    if oyuncu is not None:
-        for node in metotlari_bul(oyuncu):
-            if not node.name.startswith("_"):
-                methods.append(
-                    {
-                        "name": node.name
-                    }
-                )
 
-    history = gecmisi_oku()
+    if player is not None:
+
+        for node in player_methods(
+            player
+        ):
+
+            if node.name.startswith(
+                "_"
+            ):
+
+                continue
+
+
+            methods.append(
+                {
+                    "name": node.name
+                }
+            )
+
+
+    history = read_history()
+
 
     data = {
+
         "generation": generation,
-        "max_generations": MAX_GENERATIONS,
+
+        "max_generations":
+            MAX_GENERATIONS,
+
         "latest_method": method,
+
         "latest_generation": (
             generation
             if method
             else None
         ),
+
         "latest_code": code,
-        "line_count": len(
-            source.splitlines()
-        ),
-        "updated_at": simdi(),
+
+        "line_count":
+            len(source.splitlines()),
+
+        "updated_at": now(),
+
         "experiment_status": decision,
+
         "baseline_score": baseline,
+
         "candidate_score": candidate,
+
         "score_difference": difference,
-        "history_count": len(history),
-        "recent_history": history[
-            -MAX_HISTORY:
-        ],
+
+        "history_count":
+            len(history),
+
+        "recent_history":
+            history[-MAX_HISTORY:],
+
         "player": {
             "level": 1,
             "xp": 0,
             "inventory": 0
         },
+
         "methods": methods
     }
+
 
     with open(
         PAGES_FILE,
         "w",
         encoding="utf-8"
     ) as f:
+
         json.dump(
             data,
             f,
@@ -284,18 +419,26 @@ def pages_verisi_yaz(
 # METOT KALİTESİ
 # ============================================================
 
-def metot_kalitesi(method):
+def method_quality(method):
+
     score = 0
 
+
+    # Değer döndürüyor mu?
     if any(
         isinstance(
             node,
             ast.Return
         )
-        for node in ast.walk(method)
+        for node in ast.walk(
+            method
+        )
     ):
+
         score += 20
 
+
+    # self kullanıyor mu?
     if any(
         isinstance(
             node,
@@ -306,10 +449,15 @@ def metot_kalitesi(method):
             ast.Name
         )
         and node.value.id == "self"
-        for node in ast.walk(method)
+        for node in ast.walk(
+            method
+        )
     ):
+
         score += 25
 
+
+    # Gerçek mantık içeriyor mu?
     meaningful = (
         ast.If,
         ast.For,
@@ -321,6 +469,7 @@ def metot_kalitesi(method):
         ast.Try
     )
 
+
     if any(
         isinstance(
             node,
@@ -328,24 +477,39 @@ def metot_kalitesi(method):
         )
         for node in method.body
     ):
+
         score += 20
 
+
+    # Çok gereksiz uzun değil mi?
     lines = (
+
         method.end_lineno
         - method.lineno
         + 1
+
         if method.end_lineno
+
         else 1
     )
 
+
     if lines <= 8:
+
         score += 20
+
     elif lines <= 15:
+
         score += 12
+
     elif lines <= 30:
+
         score += 5
 
+
+    # Aşırı dallanma var mı?
     branches = sum(
+
         isinstance(
             node,
             (
@@ -355,13 +519,21 @@ def metot_kalitesi(method):
                 ast.Try
             )
         )
-        for node in ast.walk(method)
+
+        for node in ast.walk(
+            method
+        )
     )
 
+
     if branches <= 2:
+
         score += 15
+
     elif branches <= 4:
+
         score += 8
+
 
     return min(
         score,
@@ -370,14 +542,19 @@ def metot_kalitesi(method):
 
 
 # ============================================================
-# SİSTEM METRİKLERİ
+# SİSTEM SKORU
 # ============================================================
 
-def sistem_metrikleri(source):
+def system_metrics(source):
+
     try:
-        tree = ast.parse(source)
+
+        tree = ast.parse(
+            source
+        )
 
     except SyntaxError:
+
         return {
             "valid": False,
             "method_count": 0,
@@ -385,126 +562,142 @@ def sistem_metrikleri(source):
             "score": 0
         }
 
-    oyuncu = oyuncu_sinifini_bul(tree)
 
-    if oyuncu is None:
+    player = find_player(
+        tree
+    )
+
+
+    if player is None:
+
         return {
             "valid": False,
             "method_count": 0,
             "quality": 0,
             "score": 0
         }
+
 
     methods = [
+
         node
-        for node in metotlari_bul(
-            oyuncu
+
+        for node in player_methods(
+            player
         )
-        if not node.name.startswith("_")
+
+        if not node.name.startswith(
+            "_"
+        )
     ]
 
+
     qualities = [
-        metot_kalitesi(node)
+
+        method_quality(
+            node
+        )
+
         for node in methods
     ]
 
+
     quality = (
-        sum(qualities) / len(qualities)
+
+        sum(qualities)
+        / len(qualities)
+
         if qualities
+
         else 0
     )
 
-    method_points = min(
-        len(methods) * 3,
-        20
-    )
 
-    score = (
-        method_points
-        + quality * 0.40
-    )
+    score = min(
 
-    return {
-        "valid": True,
-        "method_count": len(methods),
-        "quality": round(
-            quality,
-            2
-        ),
-        "score": round(
-            score,
+        100,
+
+        round(
+
+            40
+            + min(
+                len(methods) * 2,
+                20
+            )
+            + quality * 0.40,
+
             2
         )
+    )
+
+
+    return {
+
+        "valid": True,
+
+        "method_count":
+            len(methods),
+
+        "quality":
+            round(
+                quality,
+                2
+            ),
+
+        "score": score
     }
 
 
 # ============================================================
-# GÜVENLİK
+# GÜVENLİK KONTROLÜ
 # ============================================================
 
-BANNED_NAMES = {
-    "__import__",
-    "__builtins__",
-    "__loader__",
-    "__spec__",
-    "eval",
-    "exec",
-    "compile",
-    "open",
-    "input",
-    "globals",
-    "locals",
-    "vars",
-    "dir",
-    "getattr",
-    "setattr",
-    "delattr",
-    "breakpoint",
-    "help",
-    "memoryview",
-    "os",
-    "sys",
-    "subprocess",
-    "socket",
-    "requests",
-    "urllib",
-    "pathlib",
-    "shutil",
-    "ctypes",
-    "pickle",
-    "marshal"
-}
+def security_check(tree):
 
+    for node in ast.walk(
+        tree
+    ):
 
-def guvenlik_kontrolu(tree):
-    for node in ast.walk(tree):
-
-        if (
-            isinstance(node, ast.Name)
-            and node.id in BANNED_NAMES
+        # Yasak isimler
+        if isinstance(
+            node,
+            ast.Name
         ):
-            return (
-                False,
-                f"Yasaklı isim: {node.id}"
-            )
 
+            if node.id in BANNED_NAMES:
+
+                return (
+                    False,
+                    f"Yasaklı isim: {node.id}"
+                )
+
+
+        # Yasak attribute'lar
         if isinstance(
             node,
             ast.Attribute
         ):
 
             if node.attr in BANNED_NAMES:
+
                 return (
                     False,
                     f"Yasaklı özellik: {node.attr}"
                 )
 
-            if node.attr.startswith("__"):
+
+            # __class__, __dict__ vb.
+            if node.attr.startswith(
+                "__"
+            ):
+
                 return (
                     False,
                     "Dunder özellikleri kullanılamaz."
                 )
 
+
+        # Import tamamen yasak
         if isinstance(
             node,
             (
@@ -512,27 +705,113 @@ def guvenlik_kontrolu(tree):
                 ast.ImportFrom
             )
         ):
+
             return (
                 False,
                 "Import kullanılamaz."
             )
 
+
+        # getattr / hasattr özel kontrol
+        if isinstance(
+            node,
+            ast.Call
+        ):
+
+            if isinstance(
+                node.func,
+                ast.Name
+            ):
+
+                function_name = (
+                    node.func.id
+                )
+
+
+                if function_name in {
+                    "getattr",
+                    "hasattr"
+                }:
+
+                    # Hedef nesne self olmalı
+                    if not node.args:
+
+                        return (
+                            False,
+                            (
+                                f"{function_name} "
+                                "hedef olmadan kullanılamaz."
+                            )
+                        )
+
+
+                    target = node.args[0]
+
+
+                    if not (
+                        isinstance(
+                            target,
+                            ast.Name
+                        )
+                        and target.id == "self"
+                    ):
+
+                        return (
+                            False,
+                            (
+                                f"{function_name} "
+                                "yalnızca self "
+                                "üzerinde kullanılabilir."
+                            )
+                        )
+
+
+                    # Alan adı sabitse dunder kontrolü
+                    if len(
+                        node.args
+                    ) >= 2:
+
+                        attr_arg = node.args[1]
+
+
+                        if isinstance(
+                            attr_arg,
+                            ast.Constant
+                        ):
+
+                            if (
+                                isinstance(
+                                    attr_arg.value,
+                                    str
+                                )
+                                and attr_arg.value.startswith(
+                                    "__"
+                                )
+                            ):
+
+                                return (
+                                    False,
+                                    "Dunder alanına erişilemez."
+                                )
+
+
     return (
         True,
-        "OK"
+        "Güvenlik kontrolü başarılı."
     )
 
 
 # ============================================================
-# ADAYI SARI İLE BİRLEŞTİR
+# ADAYI OLUŞTUR
 # ============================================================
 
-def aday_sistemi_olustur(
+def build_candidate(
     current_source,
     generated_code
 ):
 
     try:
+
         current_tree = ast.parse(
             current_source
         )
@@ -542,6 +821,7 @@ def aday_sistemi_olustur(
         )
 
     except SyntaxError as e:
+
         return (
             False,
             f"Syntax hatası: {e}",
@@ -549,9 +829,13 @@ def aday_sistemi_olustur(
             None
         )
 
+
     functions = [
+
         node
+
         for node in generated_tree.body
+
         if isinstance(
             node,
             (
@@ -561,20 +845,29 @@ def aday_sistemi_olustur(
         )
     ]
 
+
     if len(functions) != 1:
+
         return (
             False,
-            "Aday tam olarak bir metot içermeli.",
+            (
+                "Aday tam olarak "
+                "bir metot içermeli."
+            ),
             None,
             None
         )
 
-    new_method = functions[0]
 
+    method = functions[0]
+
+
+    # self
     if (
-        not new_method.args.args
-        or new_method.args.args[0].arg != "self"
+        not method.args.args
+        or method.args.args[0].arg != "self"
     ):
+
         return (
             False,
             "İlk parametre self olmalı.",
@@ -582,21 +875,30 @@ def aday_sistemi_olustur(
             None
         )
 
+
+    # self dışındaki normal parametreleri reddet
     if len(
-        new_method.args.args
+        method.args.args
     ) != 1:
+
         return (
             False,
-            "self dışında parametre kullanılamaz.",
+            (
+                "self dışında "
+                "parametre kullanılamaz."
+            ),
             None,
             None
         )
 
+
+    # *args / **kwargs / keyword-only
     if (
-        new_method.args.vararg
-        or new_method.args.kwarg
-        or new_method.args.kwonlyargs
+        method.args.vararg
+        or method.args.kwarg
+        or method.args.kwonlyargs
     ):
+
         return (
             False,
             "Ekstra parametre kullanılamaz.",
@@ -604,11 +906,14 @@ def aday_sistemi_olustur(
             None
         )
 
-    safe, reason = guvenlik_kontrolu(
+
+    safe, reason = security_check(
         generated_tree
     )
 
+
     if not safe:
+
         return (
             False,
             reason,
@@ -616,68 +921,206 @@ def aday_sistemi_olustur(
             None
         )
 
-    oyuncu = oyuncu_sinifini_bul(
+
+    player = find_player(
         current_tree
     )
 
-    if oyuncu is None:
+
+    if player is None:
+
         return (
             False,
-            "Sarı Sistem içinde Oyuncu sınıfı bulunamadı.",
+            (
+                "Sarı Sistem içinde "
+                "Oyuncu sınıfı bulunamadı."
+            ),
             None,
             None
         )
 
-    existing_names = {
+
+    existing = {
         node.name
-        for node in metotlari_bul(
-            oyuncu
+        for node in player_methods(
+            player
         )
     }
 
-    if new_method.name in existing_names:
+
+    if method.name in existing:
+
         return (
             False,
-            f"{new_method.name} zaten mevcut.",
+            (
+                f"{method.name} "
+                "zaten mevcut."
+            ),
             None,
             None
         )
 
-    oyuncu.body.append(
-        new_method
+
+    # Metodu geçici olarak ekle
+    player.body.append(
+        method
     )
+
 
     ast.fix_missing_locations(
         current_tree
     )
 
+
     try:
-        candidate_source = ast.unparse(
+
+        merged = ast.unparse(
             current_tree
         )
 
         compile(
-            candidate_source,
+            merged,
             SARI_FILE,
             "exec"
         )
 
     except Exception as e:
+
         return (
             False,
-            f"Aday sistem derlenemedi: {e}",
+            (
+                "Aday sistem "
+                f"derlenemedi: {e}"
+            ),
             None,
             None
         )
 
+
     return (
         True,
         "Aday hazır.",
-        candidate_source,
-        new_method
+        merged,
+        method
     )
     # ============================================================
-# GEÇİCİ PYTEST
+# PYTHON TESTİ
+# ============================================================
+
+def run_python_test(
+    source,
+    script_name,
+    script_source,
+    timeout
+):
+
+    temp = tempfile.mkdtemp(
+        prefix="red_test_"
+    )
+
+
+    try:
+
+        system_path = os.path.join(
+            temp,
+            SARI_FILE
+        )
+
+
+        script_path = os.path.join(
+            temp,
+            script_name
+        )
+
+
+        with open(
+            system_path,
+            "w",
+            encoding="utf-8"
+        ) as f:
+
+            f.write(
+                source
+            )
+
+
+        with open(
+            script_path,
+            "w",
+            encoding="utf-8"
+        ) as f:
+
+            f.write(
+                script_source
+            )
+
+
+        env = {
+            key: value
+
+            for key, value
+            in os.environ.items()
+
+            if key not in {
+                "OPENAI_API_KEY",
+                "GEMINI_API_KEY"
+            }
+        }
+
+
+        result = subprocess.run(
+            [
+                sys.executable,
+                script_path
+            ],
+
+            cwd=temp,
+
+            capture_output=True,
+
+            text=True,
+
+            timeout=timeout,
+
+            env=env
+        )
+
+
+        return (
+            result.returncode == 0,
+            result.stdout,
+            result.stderr
+        )
+
+
+    except subprocess.TimeoutExpired:
+
+        return (
+            False,
+            "",
+            "Test zaman aşımına uğradı."
+        )
+
+
+    except Exception as e:
+
+        return (
+            False,
+            "",
+            str(e)
+        )
+
+
+    finally:
+
+        shutil.rmtree(
+            temp,
+            ignore_errors=True
+        )
+
+
+# ============================================================
+# PYTEST
 # ============================================================
 
 def run_pytest(
@@ -688,6 +1131,7 @@ def run_pytest(
     temp = tempfile.mkdtemp(
         prefix="red_pytest_"
     )
+
 
     try:
 
@@ -700,7 +1144,9 @@ def run_pytest(
             encoding="utf-8"
         ) as f:
 
-            f.write(source)
+            f.write(
+                source
+            )
 
 
         shutil.copy2(
@@ -712,6 +1158,19 @@ def run_pytest(
         )
 
 
+        env = {
+            key: value
+
+            for key, value
+            in os.environ.items()
+
+            if key not in {
+                "OPENAI_API_KEY",
+                "GEMINI_API_KEY"
+            }
+        }
+
+
         result = subprocess.run(
             [
                 sys.executable,
@@ -719,11 +1178,16 @@ def run_pytest(
                 "pytest",
                 "-q"
             ],
+
             cwd=temp,
+
             capture_output=True,
+
             text=True,
+
             timeout=timeout,
-            env=TEST_ENV
+
+            env=env
         )
 
 
@@ -766,29 +1230,10 @@ def run_pytest(
 
 def run_new_method(
     source,
-    method_name,
-    timeout=15
+    method_name
 ):
 
-    temp = tempfile.mkdtemp(
-        prefix="red_method_"
-    )
-
-    try:
-
-        with open(
-            os.path.join(
-                temp,
-                SARI_FILE
-            ),
-            "w",
-            encoding="utf-8"
-        ) as f:
-
-            f.write(source)
-
-
-        runner = f"""
+    script = f"""
 from sari_sistem import Oyuncu
 
 oyuncu = Oyuncu()
@@ -800,84 +1245,35 @@ metot = getattr(
 
 assert callable(metot)
 
-sonuc = metot()
+try:
+    sonuc = metot()
+except Exception as exc:
+    print("NEW_METHOD_ERROR")
+    print(type(exc).__name__)
+    print(str(exc))
+    raise
 
 print("NEW_METHOD_OK")
 print(type(sonuc).__name__)
 """
 
 
-        runner_path = os.path.join(
-            temp,
-            "run_new_method.py"
-        )
-
-
-        with open(
-            runner_path,
-            "w",
-            encoding="utf-8"
-        ) as f:
-
-            f.write(
-                runner
-            )
-
-
-        result = subprocess.run(
-            [
-                sys.executable,
-                runner_path
-            ],
-            cwd=temp,
-            capture_output=True,
-            text=True,
-            timeout=timeout,
-            env=TEST_ENV
-        )
-
-
-        return (
-            result.returncode == 0,
-            result.stdout,
-            result.stderr
-        )
-
-
-    except subprocess.TimeoutExpired:
-
-        return (
-            False,
-            "",
-            "Yeni metot zaman aşımına uğradı."
-        )
-
-
-    except Exception as e:
-
-        return (
-            False,
-            "",
-            str(e)
-        )
-
-
-    finally:
-
-        shutil.rmtree(
-            temp,
-            ignore_errors=True
-        )
+    return run_python_test(
+        source,
+        "run_new_method.py",
+        script,
+        15
+    )
 
 
 # ============================================================
-# RED
+# REDDET
 # ============================================================
 
-def reddet(
+def reject(
     source,
     generation,
-    generated_code,
+    code,
     reason,
     method=None,
     baseline=None,
@@ -885,6 +1281,7 @@ def reddet(
 ):
 
     difference = None
+
 
     if (
         baseline is not None
@@ -897,38 +1294,59 @@ def reddet(
         )
 
 
-    gecmise_ekle({
-        "time": simdi(),
-        "attempt": len(
-            gecmisi_oku()
-        ) + 1,
-        "generation": generation,
-        "method": method,
-        "result": "rejected",
-        "reason": reason,
-        "baseline_score": baseline,
-        "candidate_score": candidate,
-        "score_difference": difference,
-        "code": generated_code
+    history = read_history()
+
+
+    add_history({
+        "time": now(),
+
+        "attempt":
+            len(history) + 1,
+
+        "generation":
+            generation,
+
+        "method":
+            method,
+
+        "result":
+            "rejected",
+
+        "reason":
+            reason,
+
+        "baseline_score":
+            baseline,
+
+        "candidate_score":
+            candidate,
+
+        "score_difference":
+            difference,
+
+        "code":
+            code
     })
 
 
-    pages_verisi_yaz(
-        source,
-        generation,
-        f"🔴 RED: {reason}",
-        method,
-        generated_code,
-        baseline,
-        candidate,
-        difference
+    write_pages(
+        source=source,
+        generation=generation,
+        decision=(
+            f"🔴 RED: {reason}"
+        ),
+        method=method,
+        code=code,
+        baseline=baseline,
+        candidate=candidate,
+        difference=difference
     )
 
 
     print()
-    print("=" * 55)
+    print("=" * 60)
     print("🔴 ADAY REDDEDİLDİ")
-    print("=" * 55)
+    print("=" * 60)
     print(
         f"Metot: {method}"
     )
@@ -936,10 +1354,13 @@ def reddet(
         f"Neden: {reason}"
     )
 
+
     if difference is not None:
+
         print(
             f"Skor farkı: {difference}"
         )
+
 
     print(
         "📚 history.json güncellendi."
@@ -949,170 +1370,179 @@ def reddet(
         "🟡 Sarı Sistem değiştirilmedi."
     )
 
-    print("=" * 55)
+    print("=" * 60)
 
+
+    # Adayın reddedilmesi sistem hatası değil.
     sys.exit(0)
 
 
 # ============================================================
-# BAŞLANGIÇ
+# ANA PROGRAM
 # ============================================================
 
-generation = oku_sayi(
-    COUNTER_FILE
-)
+def main():
+
+    generation = read_int(
+        COUNTER_FILE
+    )
 
 
-if generation >= MAX_GENERATIONS:
+    if generation >= MAX_GENERATIONS:
+
+        print(
+            f"Deney {MAX_GENERATIONS} "
+            "başarılı nesile ulaştı."
+        )
+
+        return
+
+
+    api_key = os.getenv(
+        "OPENAI_API_KEY",
+        ""
+    ).strip()
+
+
+    if not api_key:
+
+        print(
+            "HATA: OPENAI_API_KEY bulunamadı."
+        )
+
+        sys.exit(1)
+
+
+    if not os.path.exists(
+        SARI_FILE
+    ):
+
+        print(
+            f"HATA: {SARI_FILE} bulunamadı."
+        )
+
+        sys.exit(1)
+
+
+    if not os.path.exists(
+        TEST_FILE
+    ):
+
+        print(
+            f"HATA: {TEST_FILE} bulunamadı."
+        )
+
+        sys.exit(1)
+
+
+    with open(
+        SARI_FILE,
+        "r",
+        encoding="utf-8"
+    ) as f:
+
+        current_source = f.read()
+
+
+    history = read_history()
+
+
+    print()
+    print("=" * 60)
+    print("OTONOM MAVİ-KIRMIZI DENEYİ")
+    print("=" * 60)
+
 
     print(
-        f"Deney {MAX_GENERATIONS} "
-        "başarılı nesile ulaştı."
+        f"Mevcut nesil: "
+        f"{generation}/{MAX_GENERATIONS}"
     )
 
-    sys.exit(0)
-
-
-api_key = os.getenv(
-    "OPENAI_API_KEY",
-    ""
-).strip()
-
-
-if not api_key:
 
     print(
-        "HATA: OPENAI_API_KEY bulunamadı."
+        f"Aday nesil: "
+        f"{generation + 1}/{MAX_GENERATIONS}"
     )
 
-    sys.exit(1)
-
-
-if not os.path.exists(
-    SARI_FILE
-):
 
     print(
-        f"HATA: {SARI_FILE} bulunamadı."
+        f"Geçmiş deney: "
+        f"{len(history)}"
     )
 
-    sys.exit(1)
-
-
-if not os.path.exists(
-    TEST_FILE
-):
 
     print(
-        f"HATA: {TEST_FILE} bulunamadı."
+        f"Mavi maksimum: "
+        f"{MAX_CODE_LINES} satır"
     )
 
-    sys.exit(1)
+
+    print("=" * 60)
 
 
-with open(
-    SARI_FILE,
-    "r",
-    encoding="utf-8"
-) as f:
+    # --------------------------------------------------------
+    # SARI ANALİZİ
+    # --------------------------------------------------------
 
-    current_source = f.read()
+    try:
 
+        tree = ast.parse(
+            current_source
+        )
 
-history = gecmisi_oku()
+    except SyntaxError as e:
 
+        print(
+            f"🔴 Sarı Sistem syntax hatası: {e}"
+        )
 
-print()
-print("=" * 55)
-print("OTONOM MAVİ-KIRMIZI DENEYİ")
-print("=" * 55)
-
-print(
-    f"Mevcut nesil: "
-    f"{generation}/{MAX_GENERATIONS}"
-)
-
-print(
-    f"Aday nesil: "
-    f"{generation + 1}/{MAX_GENERATIONS}"
-)
-
-print(
-    f"Geçmiş deney: "
-    f"{len(history)}"
-)
-
-print(
-    f"Mavi maksimum kod: "
-    f"{MAX_CODE_LINES} satır"
-)
-
-print("=" * 55)
+        sys.exit(1)
 
 
-# ============================================================
-# SARIYI ANALİZ ET
-# ============================================================
-
-try:
-
-    tree = ast.parse(
-        current_source
+    player = find_player(
+        tree
     )
 
-except SyntaxError as e:
+
+    if player is None:
+
+        print(
+            "🔴 Oyuncu sınıfı bulunamadı."
+        )
+
+        sys.exit(1)
+
+
+    current_methods = sorted(
+        node.name
+        for node in player_methods(
+            player
+        )
+    )
+
 
     print(
-        f"🔴 Sarı Sistem syntax hatası: {e}"
-    )
-
-    sys.exit(1)
-
-
-player = oyuncu_sinifini_bul(
-    tree
-)
-
-
-if player is None:
-
-    print(
-        "🔴 Sarı Sistem içinde "
-        "Oyuncu sınıfı bulunamadı."
-    )
-
-    sys.exit(1)
-
-
-current_methods = sorted(
-    node.name
-    for node in metotlari_bul(
-        player
-    )
-)
-
-
-print(
-    "Mevcut metotlar:"
-)
-
-
-for name in current_methods:
-
-    print(
-        f"  - {name}"
+        "Mevcut metotlar:"
     )
 
 
-# ============================================================
-# MAVİ PROMPT
-# ============================================================
+    for name in current_methods:
 
-prompt = f"""
+        print(
+            f"  - {name}"
+        )
+
+
+    # --------------------------------------------------------
+    # MAVİ PROMPT
+    # --------------------------------------------------------
+
+    prompt = f"""
 Sen MAVİ SİSTEM'sin.
 
-Geçmiş deney sonuçlarından yararlanan
-bir yazılım geliştirme ajanısın.
+Görevin mevcut Python oyun motoruna
+tek bir yeni, anlamlı ve çalışabilir
+özellik eklemek.
 
 MEVCUT SARI SİSTEM:
 
@@ -1124,564 +1554,658 @@ MEVCUT METOTLAR:
 
 SON DENEYLER:
 
-{gecmis_ozeti()}
+{history_summary()}
 
-Amaç:
-Oyuncu sınıfına tek bir yeni,
-anlamlı oyun özelliği eklemek.
+GEÇMİŞTEN ÖĞREN:
 
-Kurallar:
+- Reddedilmiş yaklaşımları aynen tekrarlama.
+- Negatif sonuçları dikkate al.
+- Kabul edilmiş fikirlerden yararlan.
+- Aynı metot adını kullanma.
+- Gerçek bir oyun yeteneği düşün.
 
-1. Yalnızca BİR Python metodu döndür.
-2. En fazla {MAX_CODE_LINES} satır kullanabilirsin.
+KOD KURALLARI:
+
+1. Yalnızca BİR Python metodu üret.
+
+2. En fazla {MAX_CODE_LINES}
+   satır kullanabilirsin.
+
 3. İlk parametre self olmalı.
-4. self dışında parametre kullanma.
-5. *args ve **kwargs kullanma.
-6. Import kullanma.
-7. Mevcut metot isimlerini kullanma.
-8. Sonsuz döngü oluşturma.
-9. Sadece print yapan metot üretme.
-10. Mevcut özellikleri bozma.
-11. Gerçek bir oyun işlevi ekle.
-12. Geçmişte reddedilen yaklaşımı aynen tekrarlama.
 
-Sadece Python kodu döndür.
+4. self dışında normal parametre
+   kullanma.
+
+5. *args ve **kwargs kullanma.
+
+6. Import kullanma.
+
+7. Dış sistemlere erişme.
+
+8. Sonsuz döngü oluşturma.
+
+9. Sadece print yapan metot üretme.
+
+10. Mevcut özellikleri bozma.
+
+11. Gerçek bir oyun işlevi ekle.
+
+12. getattr veya hasattr kullanabilirsin.
+    Ancak yalnızca self üzerinde kullan.
+
+13. Dunder alanlarına erişme.
+
+Yalnızca yeni metodun Python kodunu döndür.
 """
 
 
-# ============================================================
-# OPENAI
-# ============================================================
+    # --------------------------------------------------------
+    # OPENAI
+    # --------------------------------------------------------
 
-request = urllib.request.Request(
-    OPENAI_URL,
-    data=json.dumps({
-        "model": OPENAI_MODEL,
-        "input": prompt
-    }).encode("utf-8"),
-    headers={
-        "Content-Type": "application/json",
-        "Authorization": (
-            f"Bearer {api_key}"
+    request = urllib.request.Request(
+        OPENAI_URL,
+
+        data=json.dumps({
+            "model": OPENAI_MODEL,
+            "input": prompt
+        }).encode("utf-8"),
+
+        headers={
+            "Content-Type":
+                "application/json",
+
+            "Authorization":
+                f"Bearer {api_key}"
+        },
+
+        method="POST"
+    )
+
+
+    try:
+
+        with urllib.request.urlopen(
+            request,
+            timeout=120
+        ) as response:
+
+            response_data = json.loads(
+                response.read().decode(
+                    "utf-8"
+                )
+            )
+
+
+    except urllib.error.HTTPError as e:
+
+        print(
+            "OPENAI API HATASI"
         )
-    },
-    method="POST"
-)
+
+        print(
+            f"HTTP kodu: {e.code}"
+        )
+
+        print(
+            e.read().decode(
+                "utf-8",
+                errors="replace"
+            )
+        )
+
+        sys.exit(1)
 
 
-try:
+    except Exception as e:
 
-    with urllib.request.urlopen(
-        request,
-        timeout=120
-    ) as response:
+        print(
+            f"OpenAI bağlantı hatası: {e}"
+        )
 
-        response_data = json.loads(
-            response.read().decode(
-                "utf-8"
+        sys.exit(1)
+
+
+    # --------------------------------------------------------
+    # MAVİ ÇIKTISI
+    # --------------------------------------------------------
+
+    generated = response_text(
+        response_data
+    )
+
+
+    if not generated:
+
+        print(
+            "HATA: OpenAI kod üretmedi."
+        )
+
+        sys.exit(1)
+
+
+    generated = (
+        generated
+        .replace(
+            "```python",
+            ""
+        )
+        .replace(
+            "```",
+            ""
+        )
+        .strip()
+    )
+
+
+    line_count = len(
+        generated.splitlines()
+    )
+
+
+    print()
+    print("🔵 MAVİ'NİN ADAYI")
+    print("-" * 60)
+    print(generated)
+    print("-" * 60)
+
+
+    print(
+        f"Mavi kod uzunluğu: "
+        f"{line_count}/{MAX_CODE_LINES}"
+    )
+
+
+    if line_count == 0:
+
+        reject(
+            current_source,
+            generation,
+            generated,
+            "Kod boş."
+        )
+
+
+    if line_count > MAX_CODE_LINES:
+
+        reject(
+            current_source,
+            generation,
+            generated,
+            (
+                f"Kod sınırı aşıldı: "
+                f"{line_count} > "
+                f"{MAX_CODE_LINES}"
             )
         )
 
 
-except urllib.error.HTTPError as e:
+    # --------------------------------------------------------
+    # KIRMIZI - ENTEGRASYON
+    # --------------------------------------------------------
 
+    print()
     print(
-        "OPENAI API HATASI"
-    )
-
-    print(
-        f"HTTP kodu: {e.code}"
-    )
-
-    print(
-        e.read().decode(
-            "utf-8",
-            errors="replace"
-        )
-    )
-
-    sys.exit(1)
-
-
-except Exception as e:
-
-    print(
-        f"OpenAI bağlantı hatası: {e}"
-    )
-
-    sys.exit(1)
-
-
-# ============================================================
-# MAVİ ÇIKTISI
-# ============================================================
-
-generated = openai_metin(
-    response_data
-)
-
-
-if not generated:
-
-    print(
-        "HATA: OpenAI kod üretmedi."
-    )
-
-    sys.exit(1)
-
-
-generated = (
-    generated
-    .replace(
-        "```python",
-        ""
-    )
-    .replace(
-        "```",
-        ""
-    )
-    .strip()
-)
-
-
-line_count = len(
-    generated.splitlines()
-)
-
-
-print()
-print("🔵 MAVİ'NİN ADAYI")
-print("-" * 55)
-print(generated)
-print("-" * 55)
-
-print(
-    f"Mavi kod uzunluğu: "
-    f"{line_count}/{MAX_CODE_LINES}"
-)
-
-
-if line_count == 0:
-
-    reddet(
-        current_source,
-        generation,
-        generated,
-        "Kod boş."
+        "🔴 KIRMIZI DENETİM BAŞLADI"
     )
 
 
-if line_count > MAX_CODE_LINES:
-
-    reddet(
-        current_source,
-        generation,
-        generated,
-        (
-            f"Kod sınırı aşıldı: "
-            f"{line_count} > "
-            f"{MAX_CODE_LINES}"
+    ok, reason, candidate_source, method = (
+        build_candidate(
+            current_source,
+            generated
         )
     )
 
 
-# ============================================================
-# ADAYI OLUŞTUR
-# ============================================================
-
-print()
-print(
-    "🔴 KIRMIZI DENETİM BAŞLADI"
-)
-
-
-ok, reason, candidate_source, method = (
-    aday_sistemi_olustur(
-        current_source,
-        generated
-    )
-)
-
-
-method_name = (
-    method.name
-    if method
-    else None
-)
-
-
-if not ok:
-
-    reddet(
-        current_source,
-        generation,
-        generated,
-        reason,
-        method_name
+    method_name = (
+        method.name
+        if method is not None
+        else None
     )
 
 
-print(
-    "🔴 Kırmızı: "
-    "Aday sınıfa entegre edildi ✅"
-)
+    if not ok:
 
+        reject(
+            current_source,
+            generation,
+            generated,
+            reason,
+            method_name
+        )
 
-# ============================================================
-# YENİ METOT
-# ============================================================
-
-print(
-    "🔴 Kırmızı: "
-    "Yeni metot çalıştırılıyor..."
-)
-
-
-method_ok, _, method_error = (
-    run_new_method(
-        candidate_source,
-        method_name
-    )
-)
-
-
-if not method_ok:
 
     print(
-        method_error
-    )
-
-    reddet(
-        current_source,
-        generation,
-        generated,
-        "Yeni metot çalışma testini geçemedi.",
-        method_name
+        "🔴 Kırmızı: "
+        "Aday sınıfa entegre edildi ✅"
     )
 
 
-print(
-    "🔴 Kırmızı: "
-    "Yeni metot çalışıyor ✅"
-)
-
-
-# ============================================================
-# MEVCUT SİSTEM TESTLERİ
-# ============================================================
-
-print(
-    "🔴 Kırmızı: "
-    "Mevcut Sarı testleri..."
-)
-
-
-base_ok, _, base_error = run_pytest(
-    current_source
-)
-
-
-if not base_ok:
+    # --------------------------------------------------------
+    # YENİ METOT TESTİ
+    # --------------------------------------------------------
 
     print(
-        base_error
+        "🔴 Kırmızı: "
+        "Yeni metot çalıştırılıyor..."
     )
+
+
+    method_ok, _, method_error = (
+        run_new_method(
+            candidate_source,
+            method_name
+        )
+    )
+
+
+    if not method_ok:
+
+        print(
+            method_error
+        )
+
+
+        reject(
+            current_source,
+            generation,
+            generated,
+            (
+                "Yeni metot çalışma "
+                "testini geçemedi."
+            ),
+            method_name
+        )
+
 
     print(
-        "🔴 Mevcut Sarı Sistem "
-        "zaten testleri geçemiyor."
+        "🔴 Kırmızı: "
+        "Yeni metot çalışıyor ✅"
     )
 
-    sys.exit(1)
 
-
-print(
-    "   ✅ Mevcut Sarı testleri"
-)
-
-
-# ============================================================
-# ADAY TESTLERİ
-# ============================================================
-
-candidate_ok, _, candidate_error = (
-    run_pytest(
-        candidate_source
-    )
-)
-
-
-if not candidate_ok:
+    # --------------------------------------------------------
+    # MEVCUT TESTLER
+    # --------------------------------------------------------
 
     print(
-        candidate_error
-    )
-
-    reddet(
-        current_source,
-        generation,
-        generated,
-        "Aday mevcut özellikleri koruyamadı.",
-        method_name
+        "🔴 Kırmızı: "
+        "Mevcut Sarı testleri..."
     )
 
 
-print(
-    "   ✅ Aday regresyon testleri"
-)
+    base_ok, _, base_error = (
+        run_pytest(
+            current_source
+        )
+    )
 
 
-# ============================================================
-# ÖLÇÜM
-# ============================================================
+    if not base_ok:
 
-base_metrics = (
-    sistem_metrikleri(
+        print(
+            base_error
+        )
+
+        print(
+            "🔴 Mevcut Sarı Sistem "
+            "testleri geçmiyor."
+        )
+
+        sys.exit(1)
+
+
+    print(
+        "   ✅ Mevcut Sarı testleri"
+    )
+
+
+    # --------------------------------------------------------
+    # ADAY REGRESYON
+    # --------------------------------------------------------
+
+    candidate_ok, _, candidate_error = (
+        run_pytest(
+            candidate_source
+        )
+    )
+
+
+    if not candidate_ok:
+
+        print(
+            candidate_error
+        )
+
+
+        reject(
+            current_source,
+            generation,
+            generated,
+            (
+                "Aday mevcut özellikleri "
+                "koruyamadı."
+            ),
+            method_name
+        )
+
+
+    print(
+        "   ✅ Aday regresyon testleri"
+    )
+
+
+    # --------------------------------------------------------
+    # ÖLÇÜM
+    # --------------------------------------------------------
+
+    baseline = system_metrics(
         current_source
     )
-)
 
 
-candidate_metrics = (
-    sistem_metrikleri(
-        candidate_source
+    candidate_metrics = (
+        system_metrics(
+            candidate_source
+        )
     )
-)
 
 
-baseline_score = (
-    base_metrics["score"]
-)
+    baseline_score = baseline[
+        "score"
+    ]
 
 
-candidate_score = (
-    candidate_metrics["score"]
-)
+    candidate_average_quality = (
+        candidate_metrics[
+            "quality"
+        ]
+    )
 
 
-quality = metot_kalitesi(
-    method
-)
+    new_feature_quality = (
+        method_quality(
+            method
+        )
+    )
 
 
-difference = round(
-    candidate_score
-    - baseline_score,
-    2
-)
+    # BURASI EN ÖNEMLİ DEĞİŞİKLİK:
+    #
+    # Artık adayın ortalama kalitesi,
+    # mevcut sistemin ortalama kalitesi
+    # ile kıyaslanıp doğrudan RED nedeni
+    # yapılmıyor.
+    #
+    # Yeni metodun kendi kalite değeri
+    # ayrı ölçülüyor.
+
+    feature_bonus = round(
+        new_feature_quality * 0.10,
+        2
+    )
 
 
-print()
-print(
-    "🔴 KIRMIZI ÖLÇÜM"
-)
-print("-" * 55)
-
-print(
-    f"Mevcut metot sayısı: "
-    f"{base_metrics['method_count']}"
-)
-
-print(
-    f"Aday metot sayısı: "
-    f"{candidate_metrics['method_count']}"
-)
-
-print(
-    f"Mevcut kalite: "
-    f"{base_metrics['quality']}"
-)
-
-print(
-    f"Aday kalite: "
-    f"{candidate_metrics['quality']}"
-)
-
-print(
-    f"Yeni metot kalite: "
-    f"{quality}"
-)
-
-print(
-    f"Mevcut sistem skoru: "
-    f"{baseline_score}"
-)
-
-print(
-    f"Aday sistem skoru: "
-    f"{candidate_score}"
-)
-
-print(
-    f"Skor farkı: "
-    f"{difference}"
-)
-
-print("-" * 55)
+    candidate_score = round(
+        baseline_score
+        + feature_bonus,
+        2
+    )
 
 
-# ============================================================
-# KALİTE EŞİĞİ
-# ============================================================
-
-if quality < 60:
-
-    reddet(
-        current_source,
-        generation,
-        generated,
-        (
-            f"Yeni metodun kalite puanı "
-            f"{quality}; minimum 60."
-        ),
-        method_name,
-        baseline_score,
+    difference = round(
         candidate_score
+        - baseline_score,
+        2
     )
 
 
-# ============================================================
-# SEÇİLİM
-# ============================================================
+    print()
+    print(
+        "🔴 KIRMIZI ÖLÇÜM"
+    )
 
-if candidate_score <= baseline_score:
+    print("-" * 60)
 
-    reddet(
-        current_source,
-        generation,
-        generated,
-        (
-            "Aday sistem mevcut "
-            "sistemden daha iyi skor üretmedi."
+
+    print(
+        f"Mevcut metot sayısı: "
+        f"{baseline['method_count']}"
+    )
+
+
+    print(
+        f"Aday metot sayısı: "
+        f"{candidate_metrics['method_count']}"
+    )
+
+
+    print(
+        f"Mevcut ortalama kalite: "
+        f"{baseline['quality']}"
+    )
+
+
+    print(
+        f"Aday ortalama kalite: "
+        f"{candidate_average_quality}"
+    )
+
+
+    print(
+        f"Yeni metot kalite: "
+        f"{new_feature_quality}"
+    )
+
+
+    print(
+        f"Yeni özellik katkısı: "
+        f"+{feature_bonus}"
+    )
+
+
+    print(
+        f"Mevcut sistem skoru: "
+        f"{baseline_score}"
+    )
+
+
+    print(
+        f"Aday sistem skoru: "
+        f"{candidate_score}"
+    )
+
+
+    print(
+        f"Skor farkı: "
+        f"{difference}"
+    )
+
+
+    print("-" * 60)
+
+
+    # --------------------------------------------------------
+    # ASGARİ YENİ ÖZELLİK KALİTESİ
+    # --------------------------------------------------------
+
+    if new_feature_quality < 60:
+
+        reject(
+            current_source,
+            generation,
+            generated,
+            (
+                "Yeni metot kalite puanı "
+                f"{new_feature_quality}; "
+                "minimum 60."
+            ),
+            method_name,
+            baseline_score,
+            candidate_score
+        )
+
+
+    # --------------------------------------------------------
+    # KABUL
+    # --------------------------------------------------------
+
+    new_generation = (
+        generation + 1
+    )
+
+
+    with open(
+        SARI_FILE,
+        "w",
+        encoding="utf-8"
+    ) as f:
+
+        f.write(
+            candidate_source
+        )
+
+        f.write(
+            "\n"
+        )
+
+
+    write_int(
+        COUNTER_FILE,
+        new_generation
+    )
+
+
+    add_history({
+
+        "time":
+            now(),
+
+        "attempt":
+            len(read_history()) + 1,
+
+        "generation":
+            new_generation,
+
+        "previous_generation":
+            generation,
+
+        "method":
+            method_name,
+
+        "result":
+            "accepted",
+
+        "reason":
+            (
+                "Aday testleri geçti ve "
+                "yeni özellik minimum "
+                "kalite eşiğini geçti."
+            ),
+
+        "baseline_score":
+            baseline_score,
+
+        "candidate_score":
+            candidate_score,
+
+        "score_difference":
+            difference,
+
+        "method_quality":
+            new_feature_quality,
+
+        "code":
+            generated
+    })
+
+
+    write_pages(
+        source=candidate_source,
+        generation=new_generation,
+        decision=(
+            "🟢 KABUL: "
+            "Geliştirme başarılı"
         ),
-        method_name,
-        baseline_score,
-        candidate_score
+        method=method_name,
+        code=generated,
+        baseline=baseline_score,
+        candidate=candidate_score,
+        difference=difference
     )
 
 
-# ============================================================
-# KABUL
-# ============================================================
-
-new_generation = (
-    generation + 1
-)
+    print()
+    print("=" * 60)
+    print("🟢 DENEY BAŞARILI")
+    print("=" * 60)
 
 
-with open(
-    SARI_FILE,
-    "w",
-    encoding="utf-8"
-) as f:
-
-    f.write(
-        candidate_source
-    )
-
-    f.write(
-        "\n"
+    print(
+        f"Eski nesil: {generation}"
     )
 
 
-yaz_sayi(
-    COUNTER_FILE,
-    new_generation
-)
+    print(
+        f"Yeni nesil: "
+        f"{new_generation}/{MAX_GENERATIONS}"
+    )
 
 
-gecmise_ekle({
-    "time": simdi(),
-
-    "attempt": len(
-        gecmisi_oku()
-    ) + 1,
-
-    "generation": new_generation,
-
-    "previous_generation": generation,
-
-    "method": method_name,
-
-    "result": "accepted",
-
-    "reason": (
-        "Aday sistem daha yüksek skor aldı."
-    ),
-
-    "baseline_score": baseline_score,
-
-    "candidate_score": candidate_score,
-
-    "score_difference": difference,
-
-    "method_quality": quality,
-
-    "code": generated
-})
+    print(
+        f"Eklenen metot: "
+        f"{method_name}"
+    )
 
 
-pages_verisi_yaz(
-    candidate_source,
-    new_generation,
-    "🟢 KABUL: Geliştirme başarılı",
-    method_name,
-    generated,
-    baseline_score,
-    candidate_score,
-    difference
-)
+    print(
+        f"Yeni metot kalite: "
+        f"{new_feature_quality}"
+    )
 
 
-print()
-print("=" * 55)
-print("🟢 DENEY BAŞARILI")
-print("=" * 55)
+    print(
+        f"Yeni özellik katkısı: "
+        f"+{feature_bonus}"
+    )
 
-print(
-    f"Eski nesil: {generation}"
-)
 
-print(
-    f"Yeni nesil: "
-    f"{new_generation}/{MAX_GENERATIONS}"
-)
+    print(
+        f"Eski skor: "
+        f"{baseline_score}"
+    )
 
-print(
-    f"Eklenen metot: "
-    f"{method_name}"
-)
 
-print(
-    f"Yeni metot kalite: "
-    f"{quality}"
-)
+    print(
+        f"Yeni skor: "
+        f"{candidate_score}"
+    )
 
-print(
-    f"Eski skor: "
-    f"{baseline_score}"
-)
 
-print(
-    f"Yeni skor: "
-    f"{candidate_score}"
-)
+    print(
+        f"Fark: "
+        f"+{difference}"
+    )
 
-print(
-    f"Fark: "
-    f"+{difference}"
-)
 
-print(
-    "📚 history.json güncellendi."
-)
+    print(
+        "📚 history.json güncellendi."
+    )
 
-print(
-    "🟡 Sarı Sistem güncellendi."
-)
 
-print(
-    "🌐 GitHub Pages verisi güncellendi."
-)
+    print(
+        "🟡 Sarı Sistem güncellendi."
+    )
 
-print("=" * 55)
+
+    print(
+        "🌐 GitHub Pages verisi güncellendi."
+    )
+
+
+    print("=" * 60)
+
+
+if __name__ == "__main__":
+    main()
