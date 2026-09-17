@@ -24,5 +24,19 @@
     "score_difference": 8.0,
     "method_quality": 80,
     "code": "def esya_birlestir(self):\n    if len(self.envanter) < 2:\n        return {\n            'oyuncu': self.isim,\n            'basarili': False,\n            'neden': 'Birleştirme için en az iki eşya gerekli.',\n            'envanter_sayisi': len(self.envanter)\n        }\n\n    ilk_esya = self.envanter.pop(0)\n    ikinci_esya = self.envanter.pop(0)\n    eski_seviye = self.seviye\n\n    kazanilan_xp = self.seviye * 20 + 10\n    self.xp += kazanilan_xp\n\n    while self.xp >= self.seviye * 100:\n        self.seviye += 1\n\n    birlesik_esya = {\n        'ad': f'Birleşmiş Eser {self.seviye}',\n        'kaynaklar': [ilk_esya, ikinci_esya],\n        'seviye': self.seviye,\n        'deger': kazanilan_xp * 2\n    }\n    self.envanter.append(birlesik_esya)\n\n    return {\n        'oyuncu': self.isim,\n        'basarili': True,\n        'birlesen_esyalar': [ilk_esya, ikinci_esya],\n        'olusan_esya': birlesik_esya,\n        'kazanilan_xp': kazanilan_xp,\n        'toplam_xp': self.xp,\n        'eski_seviye': eski_seviye,\n        'yeni_seviye': self.seviye,\n        'seviye_atlama_sayisi': self.seviye - eski_seviye,\n        'envanter_sayisi': len(self.envanter)\n    }"
+  },
+  {
+    "time": "2026-09-17 08:43:11 UTC",
+    "attempt": 3,
+    "generation": 9,
+    "previous_generation": 8,
+    "method": "esya_satisi",
+    "result": "accepted",
+    "reason": "Aday testleri geçti ve yeni özellik minimum kalite eşiğini geçti.",
+    "baseline_score": 93.91,
+    "candidate_score": 101.21,
+    "score_difference": 7.3,
+    "method_quality": 73,
+    "code": "def esya_satisi(self):\n    if not self.envanter:\n        return {\n            'oyuncu': self.isim,\n            'basarili': False,\n            'neden': 'Satılacak eşya bulunmuyor.',\n            'altin': getattr(self, 'altin', 0),\n            'envanter_sayisi': 0\n        }\n\n    esya = self.envanter.pop(0)\n    temel_fiyat = self.seviye * 10\n    kaynak_degeri = 0\n\n    if isinstance(esya, dict):\n        kaynak_degeri = esya.get('deger', esya.get('değer', 0))\n        if not isinstance(kaynak_degeri, (int, float)) or kaynak_degeri < 0:\n            kaynak_degeri = 0\n\n    satis_fiyati = max(temel_fiyat, int(kaynak_degeri))\n    eski_altin = getattr(self, 'altin', 0)\n    self.altin = eski_altin + satis_fiyati\n\n    return {\n        'oyuncu': self.isim,\n        'basarili': True,\n        'satilan_esya': esya,\n        'kazanilan_altin': satis_fiyati,\n        'toplam_altin': self.altin,\n        'envanter_sayisi': len(self.envanter)\n    }"
   }
 ]

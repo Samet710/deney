@@ -84,6 +84,21 @@ class Oyuncu:
         birlesik_esya = {'ad': f'Birleşmiş Eser {self.seviye}', 'kaynaklar': [ilk_esya, ikinci_esya], 'seviye': self.seviye, 'deger': kazanilan_xp * 2}
         self.envanter.append(birlesik_esya)
         return {'oyuncu': self.isim, 'basarili': True, 'birlesen_esyalar': [ilk_esya, ikinci_esya], 'olusan_esya': birlesik_esya, 'kazanilan_xp': kazanilan_xp, 'toplam_xp': self.xp, 'eski_seviye': eski_seviye, 'yeni_seviye': self.seviye, 'seviye_atlama_sayisi': self.seviye - eski_seviye, 'envanter_sayisi': len(self.envanter)}
+
+    def esya_satisi(self):
+        if not self.envanter:
+            return {'oyuncu': self.isim, 'basarili': False, 'neden': 'Satılacak eşya bulunmuyor.', 'altin': getattr(self, 'altin', 0), 'envanter_sayisi': 0}
+        esya = self.envanter.pop(0)
+        temel_fiyat = self.seviye * 10
+        kaynak_degeri = 0
+        if isinstance(esya, dict):
+            kaynak_degeri = esya.get('deger', esya.get('değer', 0))
+            if not isinstance(kaynak_degeri, (int, float)) or kaynak_degeri < 0:
+                kaynak_degeri = 0
+        satis_fiyati = max(temel_fiyat, int(kaynak_degeri))
+        eski_altin = getattr(self, 'altin', 0)
+        self.altin = eski_altin + satis_fiyati
+        return {'oyuncu': self.isim, 'basarili': True, 'satilan_esya': esya, 'kazanilan_altin': satis_fiyati, 'toplam_altin': self.altin, 'envanter_sayisi': len(self.envanter)}
 if __name__ == '__main__':
     hero = Oyuncu()
     hero.durum_raporu()
