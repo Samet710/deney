@@ -126,6 +126,41 @@ class Oyuncu:
         ganimet = {'ad': f'Zindan Ganimeti {baskin_numarasi}', 'seviye': self.seviye, 'deger': max(10, kazanilan_altin // 2)}
         self.envanter.append(ganimet)
         return {'oyuncu': self.isim, 'basarili': True, 'baskin_numarasi': baskin_numarasi, 'kazanilan_xp': kazanilan_xp, 'toplam_xp': self.xp, 'kazanilan_altin': kazanilan_altin, 'toplam_altin': self.altin, 'eski_seviye': eski_seviye, 'yeni_seviye': self.seviye, 'seviye_atlama_sayisi': self.seviye - eski_seviye, 'ekipman_gucu': ekipman_gucu, 'ganimet': ganimet, 'envanter_sayisi': len(self.envanter), 'onceki_altin': eski_altin}
+
+    def boss_savasi(self):
+        if not hasattr(self, 'altin'):
+            self.altin = 0
+        if not hasattr(self, 'boss_savasi_sayisi'):
+            self.boss_savasi_sayisi = 0
+        self.boss_savasi_sayisi += 1
+        savas_no = self.boss_savasi_sayisi
+        eski_seviye = self.seviye
+        eski_xp = self.xp
+        eski_altin = self.altin
+        ekipman_gucu = 0
+        for esya in self.envanter:
+            if isinstance(esya, dict):
+                deger = esya.get('deger', esya.get('değer', 0))
+                if isinstance(deger, (int, float)) and deger > 0:
+                    ekipman_gucu += int(deger)
+        oyuncu_gucu = self.seviye * 30 + ekipman_gucu + len(self.envanter) * 5
+        boss_gucu = self.seviye * 25 + savas_no * 8
+        basarili = oyuncu_gucu >= boss_gucu
+        if basarili:
+            kazanilan_xp = self.seviye * 35 + ekipman_gucu // 2
+            kazanilan_altin = self.seviye * 20 + len(self.envanter) * 7
+            self.xp += kazanilan_xp
+            self.altin += kazanilan_altin
+            while self.xp >= self.seviye * 100:
+                self.seviye += 1
+            ganimet = {'ad': f'Boss Ganimeti {savas_no}', 'seviye': self.seviye, 'deger': max(20, kazanilan_altin // 2)}
+            self.envanter.append(ganimet)
+            return {'oyuncu': self.isim, 'basarili': True, 'savas_numarasi': savas_no, 'oyuncu_gucu': oyuncu_gucu, 'boss_gucu': boss_gucu, 'kazanilan_xp': kazanilan_xp, 'toplam_xp': self.xp, 'kazanilan_altin': kazanilan_altin, 'toplam_altin': self.altin, 'eski_seviye': eski_seviye, 'yeni_seviye': self.seviye, 'seviye_atlama_sayisi': self.seviye - eski_seviye, 'ganimet': ganimet, 'envanter_sayisi': len(self.envanter)}
+        kaybedilen_xp = min(self.xp, self.seviye * 10)
+        self.xp -= kaybedilen_xp
+        ceza_altini = min(self.altin, self.seviye * 5)
+        self.altin -= ceza_altini
+        return {'oyuncu': self.isim, 'basarili': False, 'savas_numarasi': savas_no, 'oyuncu_gucu': oyuncu_gucu, 'boss_gucu': boss_gucu, 'kaybedilen_xp': kaybedilen_xp, 'toplam_xp': self.xp, 'kaybedilen_altin': ceza_altini, 'toplam_altin': self.altin, 'eski_seviye': eski_seviye, 'yeni_seviye': self.seviye, 'envanter_sayisi': len(self.envanter)}
 if __name__ == '__main__':
     hero = Oyuncu()
     hero.durum_raporu()
