@@ -75,7 +75,9 @@ jobs:
           git add \
             sari_sistem.py \
             counter.txt \
+            history.json \
             docs/data.json
+
 
           if git diff --staged --quiet; then
 
