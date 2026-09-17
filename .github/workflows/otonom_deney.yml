@@ -1,13 +1,12 @@
 name: Otonom Mavi Kırmızı Deneyi
 
+
 on:
 
   workflow_dispatch:
 
   schedule:
-    # Türkiye saatiyle yaklaşık her 20 dakikada bir.
-    # Saat başı yoğunluğundan kaçmak için 03-23-43 kullanıyoruz.
-    - cron: "3,23,43 * * * *"
+    - cron: "7,37 * * * *"
       timezone: "Europe/Istanbul"
 
 
@@ -30,6 +29,7 @@ jobs:
 
     runs-on: ubuntu-latest
 
+
     environment:
 
       name: github-pages
@@ -40,6 +40,10 @@ jobs:
     steps:
 
 
+      # ======================================================
+      # DEPO
+      # ======================================================
+
       - name: Depoyu Çek
 
         uses: actions/checkout@v4
@@ -47,6 +51,10 @@ jobs:
         with:
           fetch-depth: 0
 
+
+      # ======================================================
+      # PYTHON
+      # ======================================================
 
       - name: Python Ortamını Kur
 
@@ -56,7 +64,11 @@ jobs:
           python-version: "3.11"
 
 
-      - name: Test Ortamini Kur
+      # ======================================================
+      # PYTEST
+      # ======================================================
+
+      - name: Test Ortamını Kur
 
         run: |
 
@@ -64,6 +76,10 @@ jobs:
 
           pip install pytest
 
+
+      # ======================================================
+      # MAVİ + KIRMIZI
+      # ======================================================
 
       - name: Mavi ve Kırmızı Döngüsünü Çalıştır
 
@@ -76,6 +92,10 @@ jobs:
           python mavi_kirmizi.py
 
 
+      # ======================================================
+      # GITHUB'A KAYDET
+      # ======================================================
+
       - name: Değişiklikleri Depoya Kaydet
 
         run: |
@@ -86,11 +106,13 @@ jobs:
           git config user.email \
             "bot@github.com"
 
+
           git add \
             sari_sistem.py \
             counter.txt \
             history.json \
             docs/data.json
+
 
           if git diff --staged --quiet; then
 
@@ -105,6 +127,10 @@ jobs:
 
           fi
 
+
+      # ======================================================
+      # GITHUB PAGES
+      # ======================================================
 
       - name: GitHub Pages Ayarla
 
