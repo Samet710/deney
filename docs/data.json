@@ -1,16 +1,44 @@
 {
-  "generation": 0,
+  "generation": 7,
   "max_generations": 50,
   "latest_method": null,
   "latest_generation": null,
-  "latest_code": null,
-  "line_count": 0,
-  "updated_at": "Başlangıç",
-  "experiment_status": "Hazırlanıyor",
+  "latest_code": "def envanter_esyasi_kullan(self):\n        if not self.envanter:\n            return {\n                'oyuncu': self.isim,\n                'basarili': False,\n                'mesaj': 'Kullanılacak eşya yok.'\n            }\n\n        esya = self.envanter.pop(0)\n        if isinstance(esya, dict):\n            kazanilan_xp = esya.get('deger', esya.get('xp', 10))\n        else:\n            kazanilan_xp = 10\n\n        if not isinstance(kazanilan_xp, (int, float)) or kazanilan_xp < 0:\n            kazanilan_xp = 10\n\n        eski_seviye = self.seviye\n        self.xp += kazanilan_xp\n\n        while self.xp >= self.seviye * 100:\n            self.seviye += 1\n\n        return {\n            'oyuncu': self.isim,\n            'basarili': True,\n            'kullanilan_esya': esya,\n            'kazanilan_xp': kazanilan_xp,\n            'toplam_xp': self.xp,\n            'eski_seviye': eski_seviye,\n            'yeni_seviye': self.seviye,\n            'seviye_atlama_sayisi': self.seviye - eski_seviye,\n            'envanter_sayisi': len(self.envanter)\n        }",
+  "line_count": 77,
+  "updated_at": "2026-09-17 08:02:00 UTC",
+  "experiment_status": "🔴 RED: Aday sistem mevcut sistemden daha iyi skor üretmedi.",
+  "baseline_score": 55.8,
+  "candidate_score": 55.6,
+  "score_difference": -0.2,
   "player": {
     "level": 1,
     "xp": 0,
     "inventory": 0
   },
-  "methods": []
+  "methods": [
+    {
+      "name": "xp_kazan"
+    },
+    {
+      "name": "durum_raporu"
+    },
+    {
+      "name": "seviye_senkronize_et"
+    },
+    {
+      "name": "ilerleme_ozeti"
+    },
+    {
+      "name": "gelisim_degeri"
+    },
+    {
+      "name": "gelisim_uygulamasi"
+    },
+    {
+      "name": "ilerleme_ritueli"
+    },
+    {
+      "name": "yildiz_uyumu"
+    }
+  ]
 }
