@@ -57,6 +57,19 @@ class Oyuncu:
         odul = {'ad': f'Gelişim Mührü {self.seviye}', 'seviye': self.seviye, 'xp': kazanilan_xp}
         self.envanter.append(odul)
         return {'oyuncu': self.isim, 'kazanilan_xp': kazanilan_xp, 'toplam_xp': self.xp, 'eski_seviye': eski_seviye, 'yeni_seviye': self.seviye, 'seviye_atlama': self.seviye - eski_seviye, 'eklenen_odul': odul, 'envanter_sayisi': len(self.envanter)}
+
+    def yildiz_uyumu(self):
+        eski_seviye = self.seviye
+        envanter_sayisi = len(self.envanter)
+        temel_xp = self.seviye * 10
+        envanter_bonusu = envanter_sayisi * 5
+        kazanilan_xp = temel_xp + envanter_bonusu
+        self.xp += kazanilan_xp
+        while self.xp >= self.seviye * 100:
+            self.seviye += 1
+        nesne = {'ad': f'Yıldız Parçası {self.seviye}', 'seviye': self.seviye, 'deger': kazanilan_xp}
+        self.envanter.append(nesne)
+        return {'oyuncu': self.isim, 'kazanilan_xp': kazanilan_xp, 'toplam_xp': self.xp, 'eski_seviye': eski_seviye, 'yeni_seviye': self.seviye, 'seviye_atlama_sayisi': self.seviye - eski_seviye, 'eklenen_esya': nesne, 'envanter_sayisi': len(self.envanter)}
 if __name__ == '__main__':
     hero = Oyuncu()
     hero.durum_raporu()
