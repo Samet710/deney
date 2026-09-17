@@ -1,6 +1,8 @@
 name: Otonom Mavi Kırmızı Deneyi
 
+
 on:
+
   workflow_dispatch:
 
   schedule:
@@ -8,7 +10,10 @@ on:
 
 
 permissions:
+
   contents: write
+  pages: write
+  id-token: write
 
 
 jobs:
@@ -17,7 +22,13 @@ jobs:
 
     runs-on: ubuntu-latest
 
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+
     steps:
+
 
       - name: Depoyu Çek
 
@@ -64,7 +75,7 @@ jobs:
           git add \
             sari_sistem.py \
             counter.txt \
-            attempts.txt
+            docs/data.json
 
           if git diff --staged --quiet; then
 
@@ -78,3 +89,23 @@ jobs:
             git push
 
           fi
+
+
+      - name: GitHub Pages Ayarla
+
+        uses: actions/configure-pages@v5
+
+
+      - name: Pages Artifact Oluştur
+
+        uses: actions/upload-pages-artifact@v4
+
+        with:
+          path: "./docs"
+
+
+      - name: GitHub Pages Yayınla
+
+        id: deployment
+
+        uses: actions/deploy-pages@v4
