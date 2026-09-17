@@ -70,6 +70,20 @@ class Oyuncu:
         nesne = {'ad': f'Yıldız Parçası {self.seviye}', 'seviye': self.seviye, 'deger': kazanilan_xp}
         self.envanter.append(nesne)
         return {'oyuncu': self.isim, 'kazanilan_xp': kazanilan_xp, 'toplam_xp': self.xp, 'eski_seviye': eski_seviye, 'yeni_seviye': self.seviye, 'seviye_atlama_sayisi': self.seviye - eski_seviye, 'eklenen_esya': nesne, 'envanter_sayisi': len(self.envanter)}
+
+    def esya_birlestir(self):
+        if len(self.envanter) < 2:
+            return {'oyuncu': self.isim, 'basarili': False, 'neden': 'Birleştirme için en az iki eşya gerekli.', 'envanter_sayisi': len(self.envanter)}
+        ilk_esya = self.envanter.pop(0)
+        ikinci_esya = self.envanter.pop(0)
+        eski_seviye = self.seviye
+        kazanilan_xp = self.seviye * 20 + 10
+        self.xp += kazanilan_xp
+        while self.xp >= self.seviye * 100:
+            self.seviye += 1
+        birlesik_esya = {'ad': f'Birleşmiş Eser {self.seviye}', 'kaynaklar': [ilk_esya, ikinci_esya], 'seviye': self.seviye, 'deger': kazanilan_xp * 2}
+        self.envanter.append(birlesik_esya)
+        return {'oyuncu': self.isim, 'basarili': True, 'birlesen_esyalar': [ilk_esya, ikinci_esya], 'olusan_esya': birlesik_esya, 'kazanilan_xp': kazanilan_xp, 'toplam_xp': self.xp, 'eski_seviye': eski_seviye, 'yeni_seviye': self.seviye, 'seviye_atlama_sayisi': self.seviye - eski_seviye, 'envanter_sayisi': len(self.envanter)}
 if __name__ == '__main__':
     hero = Oyuncu()
     hero.durum_raporu()

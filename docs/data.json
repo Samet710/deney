@@ -1,16 +1,16 @@
 {
-  "generation": 7,
+  "generation": 8,
   "max_generations": 50,
-  "latest_method": null,
-  "latest_generation": null,
-  "latest_code": "def arena_duellosu(self):\n    mac_sayisi = getattr(self, 'arena_mac_sayisi', 0) + 1\n    self.arena_mac_sayisi = mac_sayisi\n\n    oyuncu_gucu = self.seviye * 20 + len(self.envanter) * 7 + (self.xp % 50)\n    rakip_gucu = 25 + mac_sayisi * 12\n\n    eski_seviye = self.seviye\n    eski_xp = self.xp\n\n    if oyuncu_gucu >= rakip_gucu:\n        sonuc = 'zafer'\n        kazanilan_xp = self.seviye * 20 + len(self.envanter) * 5\n        odul = {\n            'ad': f'Arena Kupası {mac_sayisi}',\n            'deger': kazanilan_xp\n        }\n        self.envanter.append(odul)\n    elif oyuncu_gucu + 10 >= rakip_gucu:\n        sonuc = 'beraberlik'\n        kazanilan_xp = self.seviye * 8\n        odul = None\n    else:\n        sonuc = 'yenilgi'\n        kazanilan_xp = self.seviye * 3\n        odul = None\n\n    self.xp += kazanilan_xp\n\n    while self.xp >= self.seviye * 100:\n        self.seviye += 1\n\n    return {\n        'oyuncu': self.isim,\n        'mac_no': mac_sayisi,\n        'sonuc': sonuc,\n        'oyuncu_gucu': oyuncu_gucu,\n        'rakip_gucu': rakip_gucu,\n        'kazanilan_xp': kazanilan_xp,\n        'toplam_xp': self.xp,\n        'eski_seviye': eski_seviye,\n        'yeni_seviye': self.seviye,\n        'seviye_atlama_sayisi': self.seviye - eski_seviye,\n        'eklenen_odul': odul,\n        'envanter_sayisi': len(self.envanter),\n        'xp_degisimi': self.xp - eski_xp\n    }",
-  "line_count": 77,
-  "updated_at": "2026-09-17 08:21:38 UTC",
-  "experiment_status": "🔴 RED: Yasaklı isim: getattr",
-  "baseline_score": null,
-  "candidate_score": null,
-  "score_difference": null,
-  "history_count": 1,
+  "latest_method": "esya_birlestir",
+  "latest_generation": 8,
+  "latest_code": "def esya_birlestir(self):\n    if len(self.envanter) < 2:\n        return {\n            'oyuncu': self.isim,\n            'basarili': False,\n            'neden': 'Birleştirme için en az iki eşya gerekli.',\n            'envanter_sayisi': len(self.envanter)\n        }\n\n    ilk_esya = self.envanter.pop(0)\n    ikinci_esya = self.envanter.pop(0)\n    eski_seviye = self.seviye\n\n    kazanilan_xp = self.seviye * 20 + 10\n    self.xp += kazanilan_xp\n\n    while self.xp >= self.seviye * 100:\n        self.seviye += 1\n\n    birlesik_esya = {\n        'ad': f'Birleşmiş Eser {self.seviye}',\n        'kaynaklar': [ilk_esya, ikinci_esya],\n        'seviye': self.seviye,\n        'deger': kazanilan_xp * 2\n    }\n    self.envanter.append(birlesik_esya)\n\n    return {\n        'oyuncu': self.isim,\n        'basarili': True,\n        'birlesen_esyalar': [ilk_esya, ikinci_esya],\n        'olusan_esya': birlesik_esya,\n        'kazanilan_xp': kazanilan_xp,\n        'toplam_xp': self.xp,\n        'eski_seviye': eski_seviye,\n        'yeni_seviye': self.seviye,\n        'seviye_atlama_sayisi': self.seviye - eski_seviye,\n        'envanter_sayisi': len(self.envanter)\n    }",
+  "line_count": 91,
+  "updated_at": "2026-09-17 08:31:54 UTC",
+  "experiment_status": "🟢 KABUL: Geliştirme başarılı",
+  "baseline_score": 91.8,
+  "candidate_score": 99.8,
+  "score_difference": 8.0,
+  "history_count": 2,
   "recent_history": [
     {
       "time": "2026-09-17 08:21:38 UTC",
@@ -23,6 +23,20 @@
       "candidate_score": null,
       "score_difference": null,
       "code": "def arena_duellosu(self):\n    mac_sayisi = getattr(self, 'arena_mac_sayisi', 0) + 1\n    self.arena_mac_sayisi = mac_sayisi\n\n    oyuncu_gucu = self.seviye * 20 + len(self.envanter) * 7 + (self.xp % 50)\n    rakip_gucu = 25 + mac_sayisi * 12\n\n    eski_seviye = self.seviye\n    eski_xp = self.xp\n\n    if oyuncu_gucu >= rakip_gucu:\n        sonuc = 'zafer'\n        kazanilan_xp = self.seviye * 20 + len(self.envanter) * 5\n        odul = {\n            'ad': f'Arena Kupası {mac_sayisi}',\n            'deger': kazanilan_xp\n        }\n        self.envanter.append(odul)\n    elif oyuncu_gucu + 10 >= rakip_gucu:\n        sonuc = 'beraberlik'\n        kazanilan_xp = self.seviye * 8\n        odul = None\n    else:\n        sonuc = 'yenilgi'\n        kazanilan_xp = self.seviye * 3\n        odul = None\n\n    self.xp += kazanilan_xp\n\n    while self.xp >= self.seviye * 100:\n        self.seviye += 1\n\n    return {\n        'oyuncu': self.isim,\n        'mac_no': mac_sayisi,\n        'sonuc': sonuc,\n        'oyuncu_gucu': oyuncu_gucu,\n        'rakip_gucu': rakip_gucu,\n        'kazanilan_xp': kazanilan_xp,\n        'toplam_xp': self.xp,\n        'eski_seviye': eski_seviye,\n        'yeni_seviye': self.seviye,\n        'seviye_atlama_sayisi': self.seviye - eski_seviye,\n        'eklenen_odul': odul,\n        'envanter_sayisi': len(self.envanter),\n        'xp_degisimi': self.xp - eski_xp\n    }"
+    },
+    {
+      "time": "2026-09-17 08:31:54 UTC",
+      "attempt": 2,
+      "generation": 8,
+      "previous_generation": 7,
+      "method": "esya_birlestir",
+      "result": "accepted",
+      "reason": "Aday testleri geçti ve yeni özellik minimum kalite eşiğini geçti.",
+      "baseline_score": 91.8,
+      "candidate_score": 99.8,
+      "score_difference": 8.0,
+      "method_quality": 80,
+      "code": "def esya_birlestir(self):\n    if len(self.envanter) < 2:\n        return {\n            'oyuncu': self.isim,\n            'basarili': False,\n            'neden': 'Birleştirme için en az iki eşya gerekli.',\n            'envanter_sayisi': len(self.envanter)\n        }\n\n    ilk_esya = self.envanter.pop(0)\n    ikinci_esya = self.envanter.pop(0)\n    eski_seviye = self.seviye\n\n    kazanilan_xp = self.seviye * 20 + 10\n    self.xp += kazanilan_xp\n\n    while self.xp >= self.seviye * 100:\n        self.seviye += 1\n\n    birlesik_esya = {\n        'ad': f'Birleşmiş Eser {self.seviye}',\n        'kaynaklar': [ilk_esya, ikinci_esya],\n        'seviye': self.seviye,\n        'deger': kazanilan_xp * 2\n    }\n    self.envanter.append(birlesik_esya)\n\n    return {\n        'oyuncu': self.isim,\n        'basarili': True,\n        'birlesen_esyalar': [ilk_esya, ikinci_esya],\n        'olusan_esya': birlesik_esya,\n        'kazanilan_xp': kazanilan_xp,\n        'toplam_xp': self.xp,\n        'eski_seviye': eski_seviye,\n        'yeni_seviye': self.seviye,\n        'seviye_atlama_sayisi': self.seviye - eski_seviye,\n        'envanter_sayisi': len(self.envanter)\n    }"
     }
   ],
   "player": {
@@ -54,6 +68,9 @@
     },
     {
       "name": "yildiz_uyumu"
+    },
+    {
+      "name": "esya_birlestir"
     }
   ]
 }
