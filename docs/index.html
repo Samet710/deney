@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Otonom Mavi-Kırmızı Deneyi</title>
+
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
+</head>
+
+<body>
+
+    <header class="hero">
+
+        <div class="badge">
+            ● CANLI DENEY
+        </div>
+
+        <h1>
+            Otonom Mavi-Kırmızı Deneyi
+        </h1>
+
+        <p>
+            Kendi kendini geliştiren yazılım motorunun
+            evrimini izle.
+        </p>
+
+    </header>
+
+
+    <main>
+
+        <section class="cards">
+
+            <div class="card">
+                <span class="label">
+                    NESİL
+                </span>
+
+                <strong id="generation">
+                    -
+                </strong>
+
+                <small>
+                    başarılı nesiller
+                </small>
+            </div>
+
+
+            <div class="card">
+                <span class="label">
+                    METOT
+                </span>
+
+                <strong id="methodCount">
+                    -
+                </strong>
+
+                <small>
+                    Oyuncu yeteneği
+                </small>
+            </div>
+
+
+            <div class="card">
+                <span class="label">
+                    SON GELİŞİM
+                </span>
+
+                <strong id="latestMethod">
+                    -
+                </strong>
+
+                <small>
+                    Mavi tarafından üretildi
+                </small>
+            </div>
+
+        </section>
+
+
+        <section class="panel">
+
+            <div class="panel-header">
+
+                <h2>
+                    🟡 Sarı Sistem
+                </h2>
+
+                <span
+                    id="status"
+                    class="status"
+                >
+                    Yükleniyor...
+                </span>
+
+            </div>
+
+
+            <div class="player">
+
+                <div class="player-main">
+
+                    <div class="avatar">
+                        A
+                    </div>
+
+                    <div>
+
+                        <h3>
+                            AllStar
+                        </h3>
+
+                        <p>
+                            Oyuncu
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div class="stats">
+
+                    <div>
+                        <span>Seviye</span>
+                        <strong id="level">-</strong>
+                    </div>
+
+                    <div>
+                        <span>XP</span>
+                        <strong id="xp">-</strong>
+                    </div>
+
+                    <div>
+                        <span>Envanter</span>
+                        <strong id="inventory">-</strong>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <section class="panel">
+
+            <div class="panel-header">
+
+                <h2>
+                    🧬 Kazanılan Yetenekler
+                </h2>
+
+            </div>
+
+
+            <div id="methods" class="methods"></div>
+
+        </section>
+
+
+        <section class="panel">
+
+            <div class="panel-header">
+
+                <h2>
+                    🔵 Son Gelişim
+                </h2>
+
+            </div>
+
+
+            <div class="latest">
+
+                <div class="latest-title">
+
+                    <span id="latestIcon">
+                        +
+                    </span>
+
+                    <div>
+
+                        <h3 id="latestName">
+                            -
+                        </h3>
+
+                        <p id="latestGeneration">
+                            -
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <pre id="latestCode">-</pre>
+
+            </div>
+
+        </section>
+
+
+        <section class="panel">
+
+            <div class="panel-header">
+
+                <h2>
+                    📊 Sistem Bilgisi
+                </h2>
+
+            </div>
+
+
+            <div class="info-grid">
+
+                <div>
+                    <span>Son güncelleme</span>
+                    <strong id="updated">-</strong>
+                </div>
+
+                <div>
+                    <span>Sistem satırı</span>
+                    <strong id="lineCount">-</strong>
+                </div>
+
+                <div>
+                    <span>Deney durumu</span>
+                    <strong id="experimentStatus">
+                        -
+                    </strong>
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <footer>
+        🔵 Mavi üretir · 🔴 Kırmızı denetler · 🟡 Sarı yaşar
+    </footer>
+
+
+    <script src="app.js"></script>
+
+</body>
+
+  </html>
