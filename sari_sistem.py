@@ -99,6 +99,33 @@ class Oyuncu:
         eski_altin = getattr(self, 'altin', 0)
         self.altin = eski_altin + satis_fiyati
         return {'oyuncu': self.isim, 'basarili': True, 'satilan_esya': esya, 'kazanilan_altin': satis_fiyati, 'toplam_altin': self.altin, 'envanter_sayisi': len(self.envanter)}
+
+    def zindan_baskini(self):
+        if not hasattr(self, 'altin'):
+            self.altin = 0
+        if not hasattr(self, 'zindan_baskini_sayisi'):
+            self.zindan_baskini_sayisi = 0
+        ekipman_gucu = 0
+        for esya in self.envanter:
+            if isinstance(esya, dict):
+                deger = esya.get('deger', esya.get('değer', 0))
+                if isinstance(deger, (int, float)) and deger > 0:
+                    ekipman_gucu += int(deger)
+        eski_seviye = self.seviye
+        eski_altin = self.altin
+        baskin_numarasi = self.zindan_baskini_sayisi + 1
+        taban_xp = self.seviye * 25
+        ekipman_bonusu = min(ekipman_gucu, self.seviye * 40)
+        kazanilan_xp = taban_xp + ekipman_bonusu
+        kazanilan_altin = self.seviye * 15 + len(self.envanter) * 5
+        self.xp += kazanilan_xp
+        self.altin += kazanilan_altin
+        self.zindan_baskini_sayisi = baskin_numarasi
+        while self.xp >= self.seviye * 100:
+            self.seviye += 1
+        ganimet = {'ad': f'Zindan Ganimeti {baskin_numarasi}', 'seviye': self.seviye, 'deger': max(10, kazanilan_altin // 2)}
+        self.envanter.append(ganimet)
+        return {'oyuncu': self.isim, 'basarili': True, 'baskin_numarasi': baskin_numarasi, 'kazanilan_xp': kazanilan_xp, 'toplam_xp': self.xp, 'kazanilan_altin': kazanilan_altin, 'toplam_altin': self.altin, 'eski_seviye': eski_seviye, 'yeni_seviye': self.seviye, 'seviye_atlama_sayisi': self.seviye - eski_seviye, 'ekipman_gucu': ekipman_gucu, 'ganimet': ganimet, 'envanter_sayisi': len(self.envanter), 'onceki_altin': eski_altin}
 if __name__ == '__main__':
     hero = Oyuncu()
     hero.durum_raporu()

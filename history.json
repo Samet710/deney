@@ -38,5 +38,19 @@
     "score_difference": 7.3,
     "method_quality": 73,
     "code": "def esya_satisi(self):\n    if not self.envanter:\n        return {\n            'oyuncu': self.isim,\n            'basarili': False,\n            'neden': 'Satılacak eşya bulunmuyor.',\n            'altin': getattr(self, 'altin', 0),\n            'envanter_sayisi': 0\n        }\n\n    esya = self.envanter.pop(0)\n    temel_fiyat = self.seviye * 10\n    kaynak_degeri = 0\n\n    if isinstance(esya, dict):\n        kaynak_degeri = esya.get('deger', esya.get('değer', 0))\n        if not isinstance(kaynak_degeri, (int, float)) or kaynak_degeri < 0:\n            kaynak_degeri = 0\n\n    satis_fiyati = max(temel_fiyat, int(kaynak_degeri))\n    eski_altin = getattr(self, 'altin', 0)\n    self.altin = eski_altin + satis_fiyati\n\n    return {\n        'oyuncu': self.isim,\n        'basarili': True,\n        'satilan_esya': esya,\n        'kazanilan_altin': satis_fiyati,\n        'toplam_altin': self.altin,\n        'envanter_sayisi': len(self.envanter)\n    }"
+  },
+  {
+    "time": "2026-09-17 13:45:44 UTC",
+    "attempt": 4,
+    "generation": 10,
+    "previous_generation": 9,
+    "method": "zindan_baskini",
+    "result": "accepted",
+    "reason": "Aday testleri geçti ve yeni özellik minimum kalite eşiğini geçti.",
+    "baseline_score": 95.72,
+    "candidate_score": 102.22,
+    "score_difference": 6.5,
+    "method_quality": 65,
+    "code": "def zindan_baskini(self):\n        if not hasattr(self, 'altin'):\n            self.altin = 0\n        if not hasattr(self, 'zindan_baskini_sayisi'):\n            self.zindan_baskini_sayisi = 0\n\n        ekipman_gucu = 0\n        for esya in self.envanter:\n            if isinstance(esya, dict):\n                deger = esya.get('deger', esya.get('değer', 0))\n                if isinstance(deger, (int, float)) and deger > 0:\n                    ekipman_gucu += int(deger)\n\n        eski_seviye = self.seviye\n        eski_altin = self.altin\n        baskin_numarasi = self.zindan_baskini_sayisi + 1\n        taban_xp = self.seviye * 25\n        ekipman_bonusu = min(ekipman_gucu, self.seviye * 40)\n        kazanilan_xp = taban_xp + ekipman_bonusu\n        kazanilan_altin = self.seviye * 15 + len(self.envanter) * 5\n\n        self.xp += kazanilan_xp\n        self.altin += kazanilan_altin\n        self.zindan_baskini_sayisi = baskin_numarasi\n\n        while self.xp >= self.seviye * 100:\n            self.seviye += 1\n\n        ganimet = {\n            'ad': f'Zindan Ganimeti {baskin_numarasi}',\n            'seviye': self.seviye,\n            'deger': max(10, kazanilan_altin // 2)\n        }\n        self.envanter.append(ganimet)\n\n        return {\n            'oyuncu': self.isim,\n            'basarili': True,\n            'baskin_numarasi': baskin_numarasi,\n            'kazanilan_xp': kazanilan_xp,\n            'toplam_xp': self.xp,\n            'kazanilan_altin': kazanilan_altin,\n            'toplam_altin': self.altin,\n            'eski_seviye': eski_seviye,\n            'yeni_seviye': self.seviye,\n            'seviye_atlama_sayisi': self.seviye - eski_seviye,\n            'ekipman_gucu': ekipman_gucu,\n            'ganimet': ganimet,\n            'envanter_sayisi': len(self.envanter),\n            'onceki_altin': eski_altin\n        }"
   }
 ]
