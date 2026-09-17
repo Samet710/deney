@@ -1,0 +1,16 @@
+{
+  "generation": 0,
+  "max_generations": 50,
+  "latest_method": null,
+  "latest_generation": null,
+  "latest_code": null,
+  "line_count": 0,
+  "updated_at": "Başlangıç",
+  "experiment_status": "Hazırlanıyor",
+  "player": {
+    "level": 1,
+    "xp": 0,
+    "inventory": 0
+  },
+  "methods": []
+}
