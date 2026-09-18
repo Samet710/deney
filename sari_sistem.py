@@ -380,6 +380,38 @@ class Oyuncu:
         yetenek = {'ad': yetenek_adi, 'kademe': mevcut_ustalik + 1, 'puan': kazanilan_puan, 'acilma_seviyesi': self.seviye}
         self.yetenekler.append(yetenek)
         return {'oyuncu': self.isim, 'basarili': True, 'egitim_numarasi': self.yetenek_ustaligi_sayisi, 'egitilen_yetenek': yetenek, 'harcanan_altin': maliyet, 'onceki_altin': eski_altin, 'toplam_altin': self.altin, 'kazanilan_xp': kazanilan_xp, 'onceki_xp': eski_xp, 'toplam_xp': self.xp, 'kazanilan_yetenek_puani': kazanilan_puan, 'toplam_yetenek_puani': self.yetenek_puanlari, 'eski_seviye': eski_seviye, 'yeni_seviye': self.seviye, 'seviye_atlama_sayisi': self.seviye - eski_seviye, 'ustalik_seviyesi': self.yetenek_ustaligi_sayisi, 'yetenek_sayisi': len(self.yetenekler)}
+
+    def yoldas_egitimi(self):
+        if not hasattr(self, 'altin'):
+            self.altin = 0
+        if not hasattr(self, 'yoldaslar'):
+            self.yoldaslar = []
+        if not hasattr(self, 'yoldas_egitim_sayisi'):
+            self.yoldas_egitim_sayisi = 0
+        if not hasattr(self, 'yoldas_bonusu'):
+            self.yoldas_bonusu = 0
+        egitim_numarasi = self.yoldas_egitim_sayisi + 1
+        maliyet = self.seviye * 18 + len(self.yoldaslar) * 25
+        if self.altin < maliyet:
+            return {'oyuncu': self.isim, 'basarili': False, 'neden': 'Yoldaş eğitimi için yeterli altın bulunmuyor.', 'gereken_altin': maliyet, 'toplam_altin': self.altin, 'eksik_altin': maliyet - self.altin, 'yoldas_sayisi': len(self.yoldaslar), 'yoldas_bonusu': self.yoldas_bonusu}
+        eski_seviye = self.seviye
+        eski_xp = self.xp
+        eski_altin = self.altin
+        eski_bonus = self.yoldas_bonusu
+        yoldas_adlari = ['Kurt Yoldaşı', 'Kartal Gözcüsü', 'Çelik Golem', 'Gölge Tilki']
+        yoldas_adi = yoldas_adlari[len(self.yoldaslar) % len(yoldas_adlari)]
+        yoldas_kademesi = len(self.yoldaslar) + 1
+        bonus = self.seviye * 6 + yoldas_kademesi * 4
+        kazanilan_xp = self.seviye * 14 + yoldas_kademesi * 8
+        self.altin -= maliyet
+        self.xp += kazanilan_xp
+        self.yoldas_egitim_sayisi = egitim_numarasi
+        self.yoldas_bonusu += bonus
+        while self.xp >= self.seviye * 100:
+            self.seviye += 1
+        yoldas = {'ad': yoldas_adi, 'kademe': yoldas_kademesi, 'savas_bonusu': bonus, 'egitim_seviyesi': self.seviye}
+        self.yoldaslar.append(yoldas)
+        return {'oyuncu': self.isim, 'basarili': True, 'egitim_numarasi': egitim_numarasi, 'egitilen_yoldas': yoldas, 'harcanan_altin': maliyet, 'onceki_altin': eski_altin, 'toplam_altin': self.altin, 'kazanilan_xp': kazanilan_xp, 'onceki_xp': eski_xp, 'toplam_xp': self.xp, 'eski_seviye': eski_seviye, 'yeni_seviye': self.seviye, 'seviye_atlama_sayisi': self.seviye - eski_seviye, 'bonus_artisi': bonus, 'onceki_yoldas_bonusu': eski_bonus, 'yoldas_bonusu': self.yoldas_bonusu, 'yoldas_sayisi': len(self.yoldaslar)}
 if __name__ == '__main__':
     hero = Oyuncu()
     hero.durum_raporu()
