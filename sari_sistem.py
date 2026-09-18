@@ -350,6 +350,36 @@ class Oyuncu:
         tahkimat = {'ad': f'Kale Savunma Nişanı {dalga_numarasi}', 'seviye': self.seviye, 'deger': max(20, kazanilan_altin // 2), 'itibar': kazanilan_itibar, 'dalga': dalga_numarasi}
         self.envanter.append(tahkimat)
         return {'oyuncu': self.isim, 'basarili': True, 'dalga_numarasi': dalga_numarasi, 'savunma_gucu': savunma_gucu, 'isgal_zorlugu': isgal_zorlugu, 'kazanilan_xp': kazanilan_xp, 'toplam_xp': self.xp, 'kazanilan_altin': kazanilan_altin, 'toplam_altin': self.altin, 'kazanilan_itibar': kazanilan_itibar, 'savunma_itibari': self.savunma_itibari, 'eski_seviye': eski_seviye, 'yeni_seviye': self.seviye, 'seviye_atlama_sayisi': self.seviye - eski_seviye, 'tahkimat': tahkimat, 'envanter_sayisi': len(self.envanter), 'onceki_xp': eski_xp, 'onceki_altin': eski_altin}
+
+    def yetenek_ustaligi(self):
+        if not hasattr(self, 'altin'):
+            self.altin = 0
+        if not hasattr(self, 'yetenek_ustaligi_sayisi'):
+            self.yetenek_ustaligi_sayisi = 0
+        if not hasattr(self, 'yetenek_puanlari'):
+            self.yetenek_puanlari = 0
+        if not hasattr(self, 'yetenekler'):
+            self.yetenekler = []
+        mevcut_ustalik = self.yetenek_ustaligi_sayisi
+        maliyet = self.seviye * 20 + mevcut_ustalik * 15
+        if self.altin < maliyet:
+            return {'oyuncu': self.isim, 'basarili': False, 'neden': 'Yetenek eğitimi için yeterli altın bulunmuyor.', 'gereken_altin': maliyet, 'toplam_altin': self.altin, 'eksik_altin': maliyet - self.altin, 'ustalik_seviyesi': mevcut_ustalik, 'yetenek_sayisi': len(self.yetenekler)}
+        eski_seviye = self.seviye
+        eski_xp = self.xp
+        eski_altin = self.altin
+        self.altin -= maliyet
+        self.yetenek_ustaligi_sayisi += 1
+        kazanilan_xp = self.seviye * 18 + mevcut_ustalik * 10
+        kazanilan_puan = 1 + self.seviye // 5
+        self.xp += kazanilan_xp
+        self.yetenek_puanlari += kazanilan_puan
+        while self.xp >= self.seviye * 100:
+            self.seviye += 1
+        yetenek_adlari = ['Çelik İrade', 'Hızlı Refleks', 'Kritik Darbe', 'Savaş Sezgisi', 'Efsanevi Dayanıklılık']
+        yetenek_adi = yetenek_adlari[mevcut_ustalik % len(yetenek_adlari)]
+        yetenek = {'ad': yetenek_adi, 'kademe': mevcut_ustalik + 1, 'puan': kazanilan_puan, 'acilma_seviyesi': self.seviye}
+        self.yetenekler.append(yetenek)
+        return {'oyuncu': self.isim, 'basarili': True, 'egitim_numarasi': self.yetenek_ustaligi_sayisi, 'egitilen_yetenek': yetenek, 'harcanan_altin': maliyet, 'onceki_altin': eski_altin, 'toplam_altin': self.altin, 'kazanilan_xp': kazanilan_xp, 'onceki_xp': eski_xp, 'toplam_xp': self.xp, 'kazanilan_yetenek_puani': kazanilan_puan, 'toplam_yetenek_puani': self.yetenek_puanlari, 'eski_seviye': eski_seviye, 'yeni_seviye': self.seviye, 'seviye_atlama_sayisi': self.seviye - eski_seviye, 'ustalik_seviyesi': self.yetenek_ustaligi_sayisi, 'yetenek_sayisi': len(self.yetenekler)}
 if __name__ == '__main__':
     hero = Oyuncu()
     hero.durum_raporu()
