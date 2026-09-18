@@ -198,6 +198,50 @@ class Oyuncu:
         while self.xp >= self.seviye * 100:
             self.seviye += 1
         return {'oyuncu': self.isim, 'basarili': True, 'esya_indexi': hedef_index, 'buyulenen_esya': hedef_esya, 'harcanan_altin': maliyet, 'onceki_altin': eski_altin, 'toplam_altin': self.altin, 'deger_artisi': deger_artisi, 'eski_deger': eski_deger, 'yeni_deger': hedef_esya['deger'], 'kazanilan_xp': kazanilan_xp, 'toplam_xp': self.xp, 'eski_seviye': eski_seviye, 'yeni_seviye': self.seviye, 'seviye_atlama_sayisi': self.seviye - eski_seviye, 'envanter_sayisi': len(self.envanter)}
+
+    def gizli_gecit_kesfi(self):
+        if not hasattr(self, 'altin'):
+            self.altin = 0
+        if not hasattr(self, 'gecit_kesfi_sayisi'):
+            self.gecit_kesfi_sayisi = 0
+        if not self.envanter:
+            return {'oyuncu': self.isim, 'basarili': False, 'neden': 'Gizli geçidi açmak için en az bir eşya gerekli.', 'toplam_altin': self.altin, 'envanter_sayisi': 0}
+        deneme_no = self.gecit_kesfi_sayisi + 1
+        anahtar_esya = self.envanter[0]
+        anahtar_degeri = 0
+        if isinstance(anahtar_esya, dict):
+            anahtar_degeri = anahtar_esya.get('deger', anahtar_esya.get('değer', 0))
+            if not isinstance(anahtar_degeri, (int, float)) or anahtar_degeri < 0:
+                anahtar_degeri = 0
+        diger_esya_gucu = 0
+        for esya in self.envanter[1:]:
+            if isinstance(esya, dict):
+                deger = esya.get('deger', esya.get('değer', 0))
+                if isinstance(deger, (int, float)) and deger > 0:
+                    diger_esya_gucu += int(deger)
+        kesif_gucu = self.seviye * 35 + int(anahtar_degeri) + min(diger_esya_gucu, self.seviye * 30)
+        gecit_zorlugu = self.seviye * 30 + deneme_no * 12
+        basarili = kesif_gucu >= gecit_zorlugu
+        eski_seviye = self.seviye
+        eski_xp = self.xp
+        eski_altin = self.altin
+        self.gecit_kesfi_sayisi = deneme_no
+        if not basarili:
+            kaybedilen_xp = min(self.xp, self.seviye * 8)
+            kaybedilen_altin = min(self.altin, self.seviye * 6)
+            self.xp -= kaybedilen_xp
+            self.altin -= kaybedilen_altin
+            return {'oyuncu': self.isim, 'basarili': False, 'kesif_numarasi': deneme_no, 'kesif_gucu': kesif_gucu, 'gecit_zorlugu': gecit_zorlugu, 'kaybedilen_xp': kaybedilen_xp, 'toplam_xp': self.xp, 'kaybedilen_altin': kaybedilen_altin, 'toplam_altin': self.altin, 'eski_seviye': eski_seviye, 'yeni_seviye': self.seviye, 'kullanilan_esya': anahtar_esya, 'envanter_sayisi': len(self.envanter)}
+        kullanilan_esya = self.envanter.pop(0)
+        kazanilan_xp = self.seviye * 30 + int(anahtar_degeri) // 2
+        kazanilan_altin = self.seviye * 25 + int(anahtar_degeri) // 3
+        self.xp += kazanilan_xp
+        self.altin += kazanilan_altin
+        while self.xp >= self.seviye * 100:
+            self.seviye += 1
+        bulunan_eser = {'ad': f'Gizli Geçit Eseri {deneme_no}', 'seviye': self.seviye, 'deger': max(25, kazanilan_altin + self.seviye * 5), 'kaynak_esya': kullanilan_esya}
+        self.envanter.append(bulunan_eser)
+        return {'oyuncu': self.isim, 'basarili': True, 'kesif_numarasi': deneme_no, 'kesif_gucu': kesif_gucu, 'gecit_zorlugu': gecit_zorlugu, 'kullanilan_esya': kullanilan_esya, 'bulunan_eser': bulunan_eser, 'kazanilan_xp': kazanilan_xp, 'toplam_xp': self.xp, 'kazanilan_altin': kazanilan_altin, 'toplam_altin': self.altin, 'eski_seviye': eski_seviye, 'yeni_seviye': self.seviye, 'seviye_atlama_sayisi': self.seviye - eski_seviye, 'envanter_sayisi': len(self.envanter)}
 if __name__ == '__main__':
     hero = Oyuncu()
     hero.durum_raporu()
