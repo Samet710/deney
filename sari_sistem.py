@@ -161,6 +161,43 @@ class Oyuncu:
         ceza_altini = min(self.altin, self.seviye * 5)
         self.altin -= ceza_altini
         return {'oyuncu': self.isim, 'basarili': False, 'savas_numarasi': savas_no, 'oyuncu_gucu': oyuncu_gucu, 'boss_gucu': boss_gucu, 'kaybedilen_xp': kaybedilen_xp, 'toplam_xp': self.xp, 'kaybedilen_altin': ceza_altini, 'toplam_altin': self.altin, 'eski_seviye': eski_seviye, 'yeni_seviye': self.seviye, 'envanter_sayisi': len(self.envanter)}
+
+    def ekipman_buyule(self):
+        if not hasattr(self, 'altin'):
+            self.altin = 0
+        hedef_esya = None
+        hedef_index = -1
+        for index, esya in enumerate(self.envanter):
+            if isinstance(esya, dict):
+                hedef_esya = esya
+                hedef_index = index
+                break
+        if hedef_esya is None:
+            return {'oyuncu': self.isim, 'basarili': False, 'neden': 'Büyülenecek uygun bir ekipman bulunmuyor.', 'toplam_altin': self.altin, 'envanter_sayisi': len(self.envanter)}
+        mevcut_deger = hedef_esya.get('deger', hedef_esya.get('değer', 0))
+        if not isinstance(mevcut_deger, (int, float)) or mevcut_deger < 0:
+            mevcut_deger = 0
+        buyu_sayisi = hedef_esya.get('buyu_sayisi', 0)
+        if not isinstance(buyu_sayisi, int) or buyu_sayisi < 0:
+            buyu_sayisi = 0
+        maliyet = self.seviye * 12 + int(mevcut_deger * 0.25) + buyu_sayisi * 10
+        maliyet = max(15, maliyet)
+        if self.altin < maliyet:
+            return {'oyuncu': self.isim, 'basarili': False, 'neden': 'Büyüleme için yeterli altın bulunmuyor.', 'gereken_altin': maliyet, 'toplam_altin': self.altin, 'eksik_altin': maliyet - self.altin, 'esya': hedef_esya, 'envanter_sayisi': len(self.envanter)}
+        eski_seviye = self.seviye
+        eski_altin = self.altin
+        eski_deger = mevcut_deger
+        deger_artisi = max(10, self.seviye * 8 + buyu_sayisi * 4)
+        kazanilan_xp = self.seviye * 10 + deger_artisi // 2
+        self.altin -= maliyet
+        self.xp += kazanilan_xp
+        hedef_esya['deger'] = int(eski_deger + deger_artisi)
+        hedef_esya['buyu_sayisi'] = buyu_sayisi + 1
+        hedef_esya['buyulu'] = True
+        hedef_esya['buyu_adi'] = f'Kademe {buyu_sayisi + 1} Büyüsü'
+        while self.xp >= self.seviye * 100:
+            self.seviye += 1
+        return {'oyuncu': self.isim, 'basarili': True, 'esya_indexi': hedef_index, 'buyulenen_esya': hedef_esya, 'harcanan_altin': maliyet, 'onceki_altin': eski_altin, 'toplam_altin': self.altin, 'deger_artisi': deger_artisi, 'eski_deger': eski_deger, 'yeni_deger': hedef_esya['deger'], 'kazanilan_xp': kazanilan_xp, 'toplam_xp': self.xp, 'eski_seviye': eski_seviye, 'yeni_seviye': self.seviye, 'seviye_atlama_sayisi': self.seviye - eski_seviye, 'envanter_sayisi': len(self.envanter)}
 if __name__ == '__main__':
     hero = Oyuncu()
     hero.durum_raporu()
