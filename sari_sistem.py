@@ -312,6 +312,44 @@ class Oyuncu:
         hazine = {'ad': f'Kadim Hazine {av_numarasi}', 'seviye': self.seviye, 'deger': max(25, kazanilan_altin // 2 + self.seviye * 5), 'av_numarasi': av_numarasi}
         self.envanter.append(hazine)
         return {'oyuncu': self.isim, 'basarili': True, 'av_numarasi': av_numarasi, 'kesif_gucu': kesif_gucu, 'hazine_zorlugu': hazine_zorlugu, 'kazanilan_xp': kazanilan_xp, 'toplam_xp': self.xp, 'kazanilan_altin': kazanilan_altin, 'toplam_altin': self.altin, 'eski_seviye': eski_seviye, 'yeni_seviye': self.seviye, 'seviye_atlama_sayisi': self.seviye - eski_seviye, 'hazine': hazine, 'envanter_sayisi': len(self.envanter), 'onceki_xp': eski_xp, 'onceki_altin': eski_altin}
+
+    def kale_savunmasi(self):
+        if not hasattr(self, 'altin'):
+            self.altin = 0
+        if not hasattr(self, 'kale_savunmasi_sayisi'):
+            self.kale_savunmasi_sayisi = 0
+        if not hasattr(self, 'savunma_itibari'):
+            self.savunma_itibari = 0
+        dalga_numarasi = self.kale_savunmasi_sayisi + 1
+        ekipman_gucu = 0
+        for esya in self.envanter:
+            if isinstance(esya, dict):
+                deger = esya.get('deger', esya.get('değer', 0))
+                if isinstance(deger, (int, float)) and deger > 0:
+                    ekipman_gucu += int(deger)
+        savunma_gucu = self.seviye * 40 + min(ekipman_gucu, self.seviye * 70) + len(self.envanter) * 5
+        isgal_zorlugu = self.seviye * 35 + dalga_numarasi * 10
+        eski_seviye = self.seviye
+        eski_xp = self.xp
+        eski_altin = self.altin
+        self.kale_savunmasi_sayisi = dalga_numarasi
+        if savunma_gucu < isgal_zorlugu:
+            kaybedilen_xp = min(self.xp, self.seviye * 7)
+            kaybedilen_altin = min(self.altin, self.seviye * 5)
+            self.xp -= kaybedilen_xp
+            self.altin -= kaybedilen_altin
+            return {'oyuncu': self.isim, 'basarili': False, 'dalga_numarasi': dalga_numarasi, 'savunma_gucu': savunma_gucu, 'isgal_zorlugu': isgal_zorlugu, 'kaybedilen_xp': kaybedilen_xp, 'toplam_xp': self.xp, 'kaybedilen_altin': kaybedilen_altin, 'toplam_altin': self.altin, 'eski_seviye': eski_seviye, 'yeni_seviye': self.seviye, 'savunma_itibari': self.savunma_itibari, 'envanter_sayisi': len(self.envanter)}
+        kazanilan_xp = self.seviye * 30 + min(ekipman_gucu, self.seviye * 50) // 2
+        kazanilan_altin = self.seviye * 18 + len(self.envanter) * 6
+        kazanilan_itibar = 8 + self.seviye * 2
+        self.xp += kazanilan_xp
+        self.altin += kazanilan_altin
+        self.savunma_itibari += kazanilan_itibar
+        while self.xp >= self.seviye * 100:
+            self.seviye += 1
+        tahkimat = {'ad': f'Kale Savunma Nişanı {dalga_numarasi}', 'seviye': self.seviye, 'deger': max(20, kazanilan_altin // 2), 'itibar': kazanilan_itibar, 'dalga': dalga_numarasi}
+        self.envanter.append(tahkimat)
+        return {'oyuncu': self.isim, 'basarili': True, 'dalga_numarasi': dalga_numarasi, 'savunma_gucu': savunma_gucu, 'isgal_zorlugu': isgal_zorlugu, 'kazanilan_xp': kazanilan_xp, 'toplam_xp': self.xp, 'kazanilan_altin': kazanilan_altin, 'toplam_altin': self.altin, 'kazanilan_itibar': kazanilan_itibar, 'savunma_itibari': self.savunma_itibari, 'eski_seviye': eski_seviye, 'yeni_seviye': self.seviye, 'seviye_atlama_sayisi': self.seviye - eski_seviye, 'tahkimat': tahkimat, 'envanter_sayisi': len(self.envanter), 'onceki_xp': eski_xp, 'onceki_altin': eski_altin}
 if __name__ == '__main__':
     hero = Oyuncu()
     hero.durum_raporu()
