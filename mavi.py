@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from openai import OpenAI
+from openai import OpenAI, RateLimitError
 
 
 ROOT = Path(__file__).resolve().parent
@@ -16,108 +16,91 @@ SOURCE_FILE = ROOT / "sari_sistem.py"
 CANDIDATE_FILE = ROOT / "mavi_aday.json"
 
 
-# OPENAI_MODEL boş olsa bile güvenli şekilde varsayılan modele düş.
-MODEL = (os.getenv("OPENAI_MODEL") or "gpt-5.6-luna").strip()
+PRIMARY_MODEL = (
+    os.getenv("OPENAI_MODEL")
+    or "gpt-5.6-luna"
+).strip()
+
+
+FALLBACK_MODEL = (
+    os.getenv("MAVI_FALLBACK_MODEL")
+    or "gpt-5.6-terra"
+).strip()
+
+
+MAX_OUTPUT_TOKENS = 8000
 
 
 SYSTEM_PROMPT = """
 You are MAVİ, the game-evolution engineer in an autonomous software loop.
 
-Your job is NOT to redesign the website.
+Your only target is sari_sistem.py, the authoritative game engine.
 
-Your only target is sari_sistem.py, which is the authoritative game model.
+Do NOT redesign the website.
 
-The browser loads data exported from that exact Python file, so every accepted
-change must alter actual gameplay or progression, not only UI text.
+Do NOT modify:
+- HTML
+- CSS
+- JavaScript
+- GitHub workflows
+- mavi.py
+- kirmizi.py
 
-Return ONLY valid JSON with exactly these keys:
+Every accepted change must affect actual gameplay or progression.
+
+Valid improvements include:
+- battle mechanics
+- player stats
+- enemy behavior
+- actions
+- resources
+- rewards
+- progression
+- items
+- risk/reward systems
+- other executable gameplay rules
+
+Cosmetic-only changes are invalid.
+
+Return ONLY one JSON object:
 
 {
   "summary": "short Turkish summary",
-  "reason": "why the change improves the game",
+  "reason": "why the gameplay improvement matters",
   "file": "sari_sistem.py",
-  "content": "complete replacement source code for sari_sistem.py"
+  "content": "COMPLETE replacement source code"
 }
 
 Rules:
 
-- Write a COMPLETE replacement file, not a diff.
-- Do not modify docs/index.html.
-- Do not modify docs/style.css.
-- Do not modify docs/app.js.
-- Do not modify workflow files.
-- Do not modify mavi.py.
-- Do not modify kirmizi.py.
-
-- Preserve the existing CLI flags:
-  --export-web
-  --self-test
-
-- Preserve:
-  Game
-  Player
-  Battle
-  GAME_CONFIG
-
-unless there is a concrete gameplay reason to extend them.
-
-- New mechanics must be implemented in the actual Python game engine.
-
-- Do not create fake changes that only alter:
-  text,
-  descriptions,
-  version numbers,
-  cosmetic metadata,
-  comments.
-
-- Every gameplay feature must have a real effect on:
-  player state,
-  battle state,
-  progression,
-  actions,
-  enemies,
-  economy,
-  rewards,
-  or another executable game mechanic.
-
+- content must be the COMPLETE sari_sistem.py file.
+- Never return a diff.
+- Never return a patch.
+- Preserve Game.
+- Preserve Player.
+- Preserve Battle.
+- Preserve GAME_CONFIG.
+- Preserve --self-test.
+- Preserve --export-web.
+- Keep the exporter compatible with the existing browser.
 - Do not invent external files.
-- Do not invent network services.
+- Do not invent services.
 - Do not invent APIs.
-- Do not require browser-only logic.
+- Do not add browser-only mechanics.
+- Do not intentionally weaken tests.
+- Do not delete working mechanics without a concrete reason.
+- Make ONE small but meaningful gameplay improvement.
+- Keep the source executable.
+- Keep randomness deterministic and testable through roll when randomness is needed.
 
-- Avoid unnecessary randomness in core rules.
-
-- If probability is used:
-  - expose the probability in GAME_CONFIG
-  - make the mechanic testable
-  - keep deterministic testing possible
-
-- Never intentionally weaken tests.
-
-- Never delete existing working mechanics merely to shorten code.
-
-- Prefer ONE small but meaningful gameplay evolution per generation.
-
-- The resulting source MUST be executable.
-
-- The resulting source MUST keep:
-  python sari_sistem.py --self-test
-
-working.
-
-- The resulting source MUST keep:
-  python sari_sistem.py --export-web
-
-working.
-
-- The browser-compatible exported data must continue to describe the actual
-  game state and mechanics.
-
-The goal is real game evolution, not dashboard evolution.
+The goal is real gameplay evolution, not dashboard evolution.
 """
 
 
-def extract_json(text: str) -> dict[str, Any]:
+def extract_json(
+    text: str,
+) -> dict[str, Any]:
+
     text = text.strip()
 
     try:
@@ -136,135 +119,334 @@ def extract_json(text: str) -> dict[str, Any]:
     )
 
     if match:
-        value = json.loads(match.group(0))
+
+        value = json.loads(
+            match.group(0)
+        )
 
         if isinstance(value, dict):
             return value
 
     raise ValueError(
-        "Mavi response was not valid JSON"
+        "Mavi response was not valid JSON."
     )
 
 
-def main() -> int:
-    api_key = os.getenv("OPENAI_API_KEY")
+def rate_limit_is_long_term(
+    error: Exception,
+) -> bool:
 
-    if not api_key:
-        print(
-            "OPENAI_API_KEY is missing",
-            file=sys.stderr,
-        )
-        return 2
+    message = str(error)
 
-    if not MODEL:
-        print(
-            "OPENAI_MODEL resolved to an empty value",
-            file=sys.stderr,
-        )
-        return 2
-
-    if not SOURCE_FILE.exists():
-        print(
-            f"Missing source file: {SOURCE_FILE}",
-            file=sys.stderr,
-        )
-        return 2
-
-    current = SOURCE_FILE.read_text(
-        encoding="utf-8"
+    match = re.search(
+        r"try again in\s+"
+        r"(?:(\d+)h)?"
+        r"(?:(\d+)m)?"
+        r"(?:(\d+(?:\.\d+)?)s)?",
+        message,
+        flags=re.IGNORECASE,
     )
 
-    client = OpenAI(
-        api_key=api_key
+    if not match:
+        return False
+
+    hours = float(
+        match.group(1) or 0
     )
 
-    user_prompt = f"""
-Here is the CURRENT sari_sistem.py source.
-
-Improve the ACTUAL GAME.
-
-Do NOT redesign the UI.
-
-Do NOT create a cosmetic-only change.
-
-Make exactly ONE concrete gameplay evolution.
-
-The returned content must be the COMPLETE replacement
-for sari_sistem.py.
-
---- CURRENT SOURCE START ---
-
-{current}
-
---- CURRENT SOURCE END ---
-
-Return ONLY the JSON object requested by the system instructions.
-"""
-
-    print(
-        f"Mavi model: {MODEL}"
+    minutes = float(
+        match.group(2) or 0
     )
 
-    response = client.responses.create(
-        model=MODEL,
+    seconds = float(
+        match.group(3) or 0
+    )
+
+    total_seconds = (
+        hours * 3600
+        + minutes * 60
+        + seconds
+    )
+
+    return total_seconds > 600
+
+
+def request_model(
+    client: OpenAI,
+    model: str,
+    prompt: str,
+):
+      print(
+        f"Mavi model: {model}"
+    )
+
+    return client.responses.create(
+        model=model,
+
         input=[
             {
                 "role": "system",
                 "content": SYSTEM_PROMPT,
             },
+
             {
                 "role": "user",
-                "content": user_prompt,
+                "content": prompt,
             },
         ],
+
+        reasoning={
+            "effort": "minimal",
+        },
+
+        max_output_tokens=MAX_OUTPUT_TOKENS,
+
+        store=False,
+
+        prompt_cache_key=(
+            "autonom-mavi-sari-v2"
+        ),
     )
 
-    output_text = response.output_text
+
+def main() -> int:
+
+    api_key = os.getenv(
+        "OPENAI_API_KEY"
+    )
+
+    if not api_key:
+
+        print(
+            "HATA: OPENAI_API_KEY bulunamadı.",
+            file=sys.stderr,
+        )
+
+        return 2
+
+
+    if not SOURCE_FILE.exists():
+
+        print(
+            (
+                "HATA: sari_sistem.py "
+                "bulunamadı."
+            ),
+            file=sys.stderr,
+        )
+
+        return 2
+
+
+    current_source = (
+        SOURCE_FILE.read_text(
+            encoding="utf-8"
+        )
+    )
+
+
+    client = OpenAI(
+        api_key=api_key
+    )
+
+
+    prompt = f"""
+Improve the actual game engine in the current sari_sistem.py.
+
+Make exactly ONE concrete gameplay improvement.
+
+The complete replacement source must remain compatible with:
+
+python sari_sistem.py --self-test
+
+and:
+
+python sari_sistem.py --export-web
+
+The browser reads docs/data.json generated by --export-web.
+
+Do not change the UI.
+
+Do not return a diff.
+
+Return the COMPLETE sari_sistem.py file.
+
+CURRENT sari_sistem.py:
+
+--- BEGIN SOURCE ---
+
+{current_source}
+
+--- END SOURCE ---
+
+Return ONLY the required JSON object.
+"""
+
+
+    models_to_try = [
+        PRIMARY_MODEL
+    ]
+
+
+    if (
+        FALLBACK_MODEL
+        and FALLBACK_MODEL
+        != PRIMARY_MODEL
+    ):
+
+        models_to_try.append(
+            FALLBACK_MODEL
+        )
+
+
+    response = None
+
+    last_error: Exception | None = None
+
+
+    for model in models_to_try:
+
+        try:
+
+            response = request_model(
+                client,
+                model,
+                prompt,
+            )
+
+            break
+
+
+        except RateLimitError as exc:
+
+            last_error = exc
+
+            print(
+                (
+                    f"Rate limit: {model}. "
+                    "Başka modele geçiliyor."
+                ),
+                file=sys.stderr,
+            )
+
+
+            if rate_limit_is_long_term(
+                exc
+            ):
+
+                continue
+
+
+            continue
+
+
+        except Exception as exc:
+
+            last_error = exc
+
+            print(
+                (
+                    f"Mavi API hatası "
+                    f"({model}): {exc}"
+                ),
+                file=sys.stderr,
+            )
+
+            return 1
+
+
+    if response is None:
+
+        print(
+            (
+                "HATA: Mavi kullanılabilir "
+                "bir model ile cevap veremedi."
+            ),
+            file=sys.stderr,
+        )
+
+
+        if last_error is not None:
+
+            print(
+                str(last_error),
+                file=sys.stderr,
+            )
+
+
+        return 1
+
 
     candidate = extract_json(
-        output_text
+        response.output_text
     )
 
-    if candidate.get("file") != "sari_sistem.py":
+
+    if (
+        candidate.get("file")
+        != "sari_sistem.py"
+    ):
+
         raise ValueError(
-            "Mavi attempted to target a different file"
+            "Mavi yanlış dosyayı hedefledi."
         )
 
-    content = candidate.get("content")
 
-    if not isinstance(content, str):
+    content = candidate.get(
+        "content"
+    )
+
+
+    if not isinstance(
+        content,
+        str,
+    ):
+
         raise ValueError(
-            "Mavi returned invalid source content"
+            (
+                "Mavi geçerli source "
+                "code üretmedi."
+            )
         )
+
 
     content = content.strip()
 
-    if len(content) < 100:
+
+    if len(content) < 300:
+
         raise ValueError(
-            "Mavi returned empty/too-short source"
-        )
+            (
+                "Mavi tarafından üretilen "
+                "kod çok kısa."
+            )
+          )
+          payload = {
+        "model": getattr(
+            response,
+            "model",
+            PRIMARY_MODEL,
+        ),
 
-    summary = str(
-        candidate.get(
-            "summary",
-            ""
-        )
-    ).strip()
+        "summary": str(
+            candidate.get(
+                "summary",
+                "",
+            )
+        ).strip(),
 
-    reason = str(
-        candidate.get(
-            "reason",
-            ""
-        )
-    ).strip()
+        "reason": str(
+            candidate.get(
+                "reason",
+                "",
+            )
+        ).strip(),
 
-    payload = {
-        "model": MODEL,
-        "summary": summary,
-        "reason": reason,
         "file": "sari_sistem.py",
+
         "content": content,
     }
+
 
     CANDIDATE_FILE.write_text(
         json.dumps(
@@ -275,21 +457,31 @@ Return ONLY the JSON object requested by the system instructions.
         encoding="utf-8",
     )
 
+
     print(
         json.dumps(
             {
                 "ok": True,
-                "model": MODEL,
-                "summary": summary,
+
+                "model": payload[
+                    "model"
+                ],
+
+                "summary": payload[
+                    "summary"
+                ],
             },
+
             ensure_ascii=False,
         )
     )
+
 
     return 0
 
 
 if __name__ == "__main__":
+
     raise SystemExit(
         main()
-  )
+    )
