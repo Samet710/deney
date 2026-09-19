@@ -1,4 +1,13 @@
-from sari_sistem import GAME_CONFIG, Game, self_test
+from __future__ import annotations
+
+import json
+
+from sari_sistem import (
+    GAME_CONFIG,
+    Game,
+    export_web,
+    self_test,
+)
 
 
 def test_self_test():
@@ -8,187 +17,374 @@ def test_self_test():
 
 
 def test_game_can_start():
-    game = Game(GAME_CONFIG)
+    game = Game(
+        GAME_CONFIG
+    )
 
-    snapshot = game.start_battle(seed=0)
+    snapshot = game.start_battle(
+        seed=0
+    )
 
-    assert snapshot["battle"] is not None
-    assert snapshot["battle"]["enemy_hp"] > 0
+    assert (
+        snapshot["battle"]
+        is not None
+    )
+
+    assert (
+        snapshot["battle"]["enemy_hp"]
+        > 0
+    )
 
 
 def test_attack_really_changes_enemy_hp():
-    game = Game(GAME_CONFIG)
+    game = Game(
+        GAME_CONFIG
+    )
 
-    game.start_battle(seed=0)
+    game.start_battle(
+        seed=0
+    )
 
-    before = game.battle.enemy_hp
+    before = (
+        game.battle.enemy_hp
+    )
 
-    game.act("attack", roll=0.99)
+    game.act(
+        "attack",
+        roll=0.99,
+    )
 
-    after = game.battle.enemy_hp
+    after = (
+        game.battle.enemy_hp
+    )
 
     assert after < before
 
 
-def test_guard_really_creates_shield():
-    game = Game(GAME_CONFIG)
+def test_guard_really_reduces_incoming_damage():
+    normal = Game(
+        GAME_CONFIG
+    )
 
-    game.start_battle(seed=0)
+    normal.start_battle(
+        seed=1
+    )
 
-    before = game.battle.shield
+    normal_before = (
+        normal.player.hp
+    )
 
-    game.act("guard", roll=0.99)
+    normal.act(
+        "attack",
+        roll=0.99,
+    )
 
-    after = game.battle.shield
+    normal_damage = (
+        normal_before
+        - normal.player.hp
+    )
 
-    assert after > before
+
+    guarded = Game(
+        GAME_CONFIG
+    )
+
+    guarded.start_battle(
+        seed=1
+    )
+
+    guarded_before = (
+        guarded.player.hp
+    )
+
+    guarded.act(
+        "guard",
+        roll=0.99,
+    )
+
+    guarded_damage = (
+        guarded_before
+        - guarded.player.hp
+    )
+
+
+    assert (
+        normal_damage > 0
+    )
+
+    assert (
+        guarded_damage
+        < normal_damage
+    )
+
+    assert any(
+        "engellendi" in line
+        for line in guarded.battle.log
+    )
 
 
 def test_heal_really_changes_player_hp():
-    game = Game(GAME_CONFIG)
+    game = Game(
+        GAME_CONFIG
+    )
 
-    game.start_battle(seed=0)
+    game.start_battle(
+        seed=0
+    )
 
     game.player.hp = 50
 
-    before = game.player.hp
+    before = (
+        game.player.hp
+    )
 
-    game.act("heal", roll=0.99)
+    game.act(
+        "heal",
+        roll=0.99,
+    )
 
-    after = game.player.hp
+    after = (
+        game.player.hp
+    )
 
     assert after > before
 
-    assert after <= GAME_CONFIG["player"]["max_hp"]
+    assert (
+        after
+        <= GAME_CONFIG[
+            "player"
+        ]["max_hp"]
+    )
 
 
 def test_attack_can_finish_battle():
+
     config = {
         **GAME_CONFIG,
+
         "player": {
             **GAME_CONFIG["player"],
+
             "base_attack": 100,
         },
     }
 
-    game = Game(config)
+    game = Game(
+        config
+    )
 
-    game.start_battle(seed=0)
+    game.start_battle(
+        seed=0
+    )
 
-    game.act("attack", roll=0.99)
+    game.act(
+        "attack",
+        roll=0.99,
+    )
 
-    assert game.battle.ended is True
+    assert (
+        game.battle.ended
+        is True
+    )
 
-    assert game.battle.result == "win"
+    assert (
+        game.battle.result
+        == "win"
+    )
 
 
 def test_win_rewards_are_real():
+
     config = {
         **GAME_CONFIG,
+
         "player": {
             **GAME_CONFIG["player"],
+
             "base_attack": 100,
         },
     }
 
-    game = Game(config)
+    game = Game(
+        config
+    )
 
-    game.start_battle(seed=0)
+    game.start_battle(
+        seed=0
+    )
 
-    starting_gold = game.player.gold
-    starting_level = game.player.level
-    starting_xp = game.player.xp
+    starting_gold = (
+        game.player.gold
+    )
 
-    game.act("attack", roll=0.99)
+    starting_xp = (
+        game.player.xp
+    )
 
-    assert game.battle.result == "win"
+    starting_level = (
+        game.player.level
+    )
 
-    assert game.player.gold > starting_gold
+    game.act(
+        "attack",
+        roll=0.99,
+    )
 
     assert (
-        game.player.xp != starting_xp
-        or game.player.level > starting_level
+        game.battle.result
+        == "win"
+    )
+
+    assert (
+        game.player.gold
+        > starting_gold
+    )
+
+    assert (
+        game.player.xp
+        != starting_xp
+        or game.player.level
+        > starting_level
     )
 
 
 def test_level_progression_is_real():
+
     config = {
         **GAME_CONFIG,
+
         "progression": {
             **GAME_CONFIG["progression"],
+
             "xp_to_level": 1,
         },
+
         "player": {
             **GAME_CONFIG["player"],
+
             "base_attack": 100,
         },
     }
 
-    game = Game(config)
+    game = Game(
+        config
+    )
 
-    game.start_battle(seed=0)
+    game.start_battle(
+        seed=0
+    )
 
-    game.act("attack", roll=0.99)
+    game.act(
+        "attack",
+        roll=0.99,
+    )
 
-    assert game.player.level > 1
+    assert (
+        game.player.level
+        > 1
+    )
 
 
 def test_potion_costs_real_gold():
-    game = Game(GAME_CONFIG)
 
-    game.start_battle(seed=0)
+    game = Game(
+        GAME_CONFIG
+    )
+
+    game.start_battle(
+        seed=0
+    )
 
     game.player.hp = 50
 
-    before_gold = game.player.gold
-    before_hp = game.player.hp
+    before_gold = (
+        game.player.gold
+    )
 
-    result = game.buy_potion()
+    before_hp = (
+        game.player.hp
+    )
 
-    after_gold = game.player.gold
-    after_hp = game.player.hp
+    result = (
+        game.buy_potion()
+    )
 
     assert result is True
 
-    assert after_gold < before_gold
+    assert (
+        game.player.gold
+        < before_gold
+    )
 
-    assert after_hp > before_hp
+    assert (
+        game.player.hp
+        > before_hp
+    )
 
 
 def test_full_hp_potion_is_rejected():
-    game = Game(GAME_CONFIG)
 
-    game.start_battle(seed=0)
+    game = Game(
+        GAME_CONFIG
+    )
 
-    before_gold = game.player.gold
+    game.start_battle(
+        seed=0
+    )
 
-    result = game.buy_potion()
+    before_gold = (
+        game.player.gold
+    )
+
+    result = (
+        game.buy_potion()
+    )
 
     assert result is False
 
-    assert game.player.gold == before_gold
+    assert (
+        game.player.gold
+        == before_gold
+    )
 
 
 def test_invalid_action_is_rejected():
-    game = Game(GAME_CONFIG)
 
-    game.start_battle(seed=0)
+    game = Game(
+        GAME_CONFIG
+    )
+
+    game.start_battle(
+        seed=0
+    )
 
     try:
-        game.act("this_action_does_not_exist", roll=0.99)
+
+        game.act(
+            "this_action_does_not_exist",
+            roll=0.99,
+        )
 
     except ValueError:
+
         return
 
-    assert False, "Invalid action should raise ValueError"
+    assert False, (
+        "Invalid action should "
+        "raise ValueError"
+    )
 
 
-def test_export_web_works(tmp_path, monkeypatch):
-    # Sadece sari_sistem'in normal export mekanizmasının
-    # bozulmadığını kontrol eder.
+def test_export_web_works(
+    tmp_path,
+    monkeypatch,
+):
+
     import sari_sistem
 
-    data_file = tmp_path / "data.json"
+    data_file = (
+        tmp_path / "data.json"
+    )
 
     monkeypatch.setattr(
         sari_sistem,
@@ -202,28 +398,67 @@ def test_export_web_works(tmp_path, monkeypatch):
         tmp_path,
     )
 
-    sari_sistem.export_web()
+    monkeypatch.setattr(
+        sari_sistem,
+        "HISTORY_FILE",
+        tmp_path
+        / "history.json",
+    )
+
+    monkeypatch.setattr(
+        sari_sistem,
+        "COUNTER_FILE",
+        tmp_path
+        / "counter.txt",
+    )
+
+    export_web()
 
     assert data_file.exists()
 
-    payload = __import__("json").loads(
+    payload = json.loads(
         data_file.read_text(
             encoding="utf-8"
         )
     )
 
-    assert "system" in payload
+    assert (
+        "system"
+        in payload
+    )
 
-    assert "game" in payload
+    assert (
+        "game"
+        in payload
+    )
 
-    assert "smoke_test" in payload
+    assert (
+        "smoke_test"
+        in payload
+    )
 
-    assert payload["game"]["actions"]
+    assert (
+        payload[
+            "smoke_test"
+        ]["ok"]
+        is True
+    )
 
-    assert payload["game"]["enemies"]
+    assert (
+        payload[
+            "game"
+        ]["actions"]
+    )
+
+    assert (
+        payload[
+            "game"
+        ]["enemies"]
+    )
 
 
 def test_gameplay_sections_exist():
+
     required = {
         "player",
         "progression",
@@ -233,11 +468,12 @@ def test_gameplay_sections_exist():
     }
 
     assert required.issubset(
-        set(GAME_CONFIG.keys())
+        GAME_CONFIG.keys()
     )
 
 
 def test_actions_have_executable_effects():
+
     allowed = {
         "damage",
         "heal",
@@ -245,7 +481,10 @@ def test_actions_have_executable_effects():
         "energy",
     }
 
-    for action in GAME_CONFIG["actions"]:
+    for action in GAME_CONFIG[
+        "actions"
+    ]:
+
         assert isinstance(
             action["id"],
             str,
@@ -254,18 +493,39 @@ def test_actions_have_executable_effects():
         assert action["id"]
 
         assert isinstance(
-            action.get("effects"),
+            action.get(
+                "effects"
+            ),
             list,
         )
 
-        for effect in action["effects"]:
-            assert effect["type"] in allowed
+        for effect in action[
+            "effects"
+        ]:
+
+            assert (
+                effect["type"]
+                in allowed
+            )
 
 
 def test_enemies_have_required_stats():
-    for enemy in GAME_CONFIG["enemies"]:
-        assert enemy["hp"] > 0
 
-        assert enemy["attack"] >= 0
+    for enemy in GAME_CONFIG[
+        "enemies"
+    ]:
 
-        assert enemy["defense"] >= 0
+        assert (
+            enemy["hp"]
+            > 0
+        )
+
+        assert (
+            enemy["attack"]
+            >= 0
+        )
+
+        assert (
+            enemy["defense"]
+            >= 0
+    )
