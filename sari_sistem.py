@@ -1,499 +1,386 @@
-class Oyuncu:
+from __future__ import annotations
 
-    def __init__(self, isim='AllStar'):
-        self.isim = isim
-        self.seviye = 1
-        self.xp = 0
-        self.envanter = []
+import argparse
+import json
+import math
+from dataclasses import asdict, dataclass, field
+from pathlib import Path
+from typing import Any
 
-    def xp_kazan(self, miktar):
-        self.xp += miktar
-        print(f'{self.isim} {miktar} XP kazandı! Toplam XP: {self.xp}')
-        if self.xp >= self.seviye * 100:
-            self.seviye += 1
-            print(f'TEBRİKLER! Seviye Atlandı! Yeni Seviye: {self.seviye}')
+ROOT = Path(__file__).resolve().parent
+DOCS = ROOT / "docs"
+DATA_FILE = DOCS / "data.json"
+COUNTER_FILE = ROOT / "counter.txt"
+HISTORY_FILE = ROOT / "history.json"
 
-    def durum_raporu(self):
-        print(f'\n--- {self.isim} Durum Raporu ---')
-        print(f'Seviye: {self.seviye} | XP: {self.xp}')
-        print(f'Envanter: {self.envanter}\n')
+TITLE = "YELLOW // MICRO DUNGEON"
 
-    def seviye_senkronize_et(self):
-        seviye_atlandi = 0
-        while self.xp >= self.seviye * 100:
-            self.seviye += 1
-            seviye_atlandi += 1
-        return seviye_atlandi
 
-    def ilerleme_ozeti(self):
-        hedef_xp = self.seviye * 100
-        return {'isim': self.isim, 'seviye': self.seviye, 'xp': self.xp, 'sonraki_seviye_xp': hedef_xp, 'kalan_xp': max(0, hedef_xp - self.xp), 'envanter_sayisi': len(self.envanter)}
+# -----------------------------------------------------------------------------
+# THIS IS THE AUTHORITATIVE GAME MODEL.
+# Blue modifies this file. Red validates the result. Pages reads the exported
+# JSON produced from this file. UI code is deliberately outside this loop.
+# -----------------------------------------------------------------------------
 
-    def gelisim_degeri(self):
-        seviye_puani = self.seviye * 100
-        envanter_puani = len(self.envanter) * 25
-        toplam_puan = self.xp + seviye_puani + envanter_puani
-        return {'oyuncu': self.isim, 'gelisim_puani': toplam_puan, 'seviye_katkisi': seviye_puani, 'xp_katkisi': self.xp, 'envanter_katkisi': envanter_puani}
+GAME_CONFIG: dict[str, Any] = {
+    "title": TITLE,
+    "subtitle": "A tiny turn-based dungeon that the autonomous loop can evolve.",
+    "rules_version": 1,
+    "player": {
+        "max_hp": 100,
+        "max_energy": 6,
+        "starting_gold": 12,
+        "base_attack": 12,
+        "base_defense": 2,
+        "crit_chance": 0.10,
+        "crit_multiplier": 1.75,
+    },
+    "progression": {
+        "xp_per_win": 35,
+        "xp_per_loss": 8,
+        "xp_to_level": 100,
+        "gold_per_win": 9,
+        "heal_after_battle": 18,
+    },
+    "actions": [
+        {
+            "id": "attack",
+            "name": "Saldır",
+            "description": "Normal saldırı. Kritik vuruş küçük bir ihtimalle güçlenir.",
+            "energy": 2,
+            "effects": [{"type": "damage", "amount": 1.0, "stat": "attack"}],
+        },
+        {
+            "id": "guard",
+            "name": "Savun",
+            "description": "Bu tur alınan hasarı azaltır ve az miktarda enerji geri verir.",
+            "energy": 0,
+            "effects": [
+                {"type": "shield", "amount": 6},
+                {"type": "energy", "amount": 1},
+            ],
+        },
+        {
+            "id": "heal",
+            "name": "İyileş",
+            "description": "Enerji harcayarak can yeniler.",
+            "energy": 3,
+            "effects": [{"type": "heal", "amount": 20}],
+        },
+    ],
+    "enemies": [
+        {
+            "id": "slime",
+            "name": "Neon Slime",
+            "hp": 54,
+            "attack": 8,
+            "defense": 1,
+            "gold": 6,
+            "xp": 24,
+        },
+        {
+            "id": "drone",
+            "name": "Rust Drone",
+            "hp": 72,
+            "attack": 11,
+            "defense": 2,
+            "gold": 9,
+            "xp": 32,
+        },
+        {
+            "id": "warden",
+            "name": "Archive Warden",
+            "hp": 92,
+            "attack": 14,
+            "defense": 3,
+            "gold": 13,
+            "xp": 44,
+        },
+    ],
+    "shop": {
+        "potion_cost": 8,
+        "potion_heal": 24,
+    },
+}
 
-    def gelisim_uygulamasi(self):
-        envanter_etkisi = len(self.envanter) * 10
-        temel_odul = self.seviye * 15
-        kazanilan_xp = temel_odul + envanter_etkisi
-        eski_seviye = self.seviye
-        self.xp += kazanilan_xp
-        while self.xp >= self.seviye * 100:
-            self.seviye += 1
-        return {'oyuncu': self.isim, 'kazanilan_xp': kazanilan_xp, 'toplam_xp': self.xp, 'eski_seviye': eski_seviye, 'yeni_seviye': self.seviye, 'seviye_atlama_sayisi': self.seviye - eski_seviye, 'envanter_etkisi': envanter_etkisi}
 
-    def ilerleme_ritueli(self):
-        envanter_sayisi = len(self.envanter)
-        eski_seviye = self.seviye
-        taban_odul = self.seviye * 12
-        envanter_bonusu = envanter_sayisi * 8
-        kazanilan_xp = taban_odul + envanter_bonusu
-        self.xp += kazanilan_xp
-        while self.xp >= self.seviye * 100:
-            self.seviye += 1
-        odul = {'ad': f'Gelişim Mührü {self.seviye}', 'seviye': self.seviye, 'xp': kazanilan_xp}
-        self.envanter.append(odul)
-        return {'oyuncu': self.isim, 'kazanilan_xp': kazanilan_xp, 'toplam_xp': self.xp, 'eski_seviye': eski_seviye, 'yeni_seviye': self.seviye, 'seviye_atlama': self.seviye - eski_seviye, 'eklenen_odul': odul, 'envanter_sayisi': len(self.envanter)}
+@dataclass
+class Player:
+    hp: int
+    energy: int
+    gold: int
+    xp: int = 0
+    level: int = 1
+    inventory: list[str] = field(default_factory=list)
 
-    def yildiz_uyumu(self):
-        eski_seviye = self.seviye
-        envanter_sayisi = len(self.envanter)
-        temel_xp = self.seviye * 10
-        envanter_bonusu = envanter_sayisi * 5
-        kazanilan_xp = temel_xp + envanter_bonusu
-        self.xp += kazanilan_xp
-        while self.xp >= self.seviye * 100:
-            self.seviye += 1
-        nesne = {'ad': f'Yıldız Parçası {self.seviye}', 'seviye': self.seviye, 'deger': kazanilan_xp}
-        self.envanter.append(nesne)
-        return {'oyuncu': self.isim, 'kazanilan_xp': kazanilan_xp, 'toplam_xp': self.xp, 'eski_seviye': eski_seviye, 'yeni_seviye': self.seviye, 'seviye_atlama_sayisi': self.seviye - eski_seviye, 'eklenen_esya': nesne, 'envanter_sayisi': len(self.envanter)}
 
-    def esya_birlestir(self):
-        if len(self.envanter) < 2:
-            return {'oyuncu': self.isim, 'basarili': False, 'neden': 'Birleştirme için en az iki eşya gerekli.', 'envanter_sayisi': len(self.envanter)}
-        ilk_esya = self.envanter.pop(0)
-        ikinci_esya = self.envanter.pop(0)
-        eski_seviye = self.seviye
-        kazanilan_xp = self.seviye * 20 + 10
-        self.xp += kazanilan_xp
-        while self.xp >= self.seviye * 100:
-            self.seviye += 1
-        birlesik_esya = {'ad': f'Birleşmiş Eser {self.seviye}', 'kaynaklar': [ilk_esya, ikinci_esya], 'seviye': self.seviye, 'deger': kazanilan_xp * 2}
-        self.envanter.append(birlesik_esya)
-        return {'oyuncu': self.isim, 'basarili': True, 'birlesen_esyalar': [ilk_esya, ikinci_esya], 'olusan_esya': birlesik_esya, 'kazanilan_xp': kazanilan_xp, 'toplam_xp': self.xp, 'eski_seviye': eski_seviye, 'yeni_seviye': self.seviye, 'seviye_atlama_sayisi': self.seviye - eski_seviye, 'envanter_sayisi': len(self.envanter)}
+@dataclass
+class Battle:
+    enemy: dict[str, Any]
+    enemy_hp: int
+    shield: int = 0
+    turn: int = 1
+    log: list[str] = field(default_factory=list)
+    ended: bool = False
+    result: str | None = None
 
-    def esya_satisi(self):
-        if not self.envanter:
-            return {'oyuncu': self.isim, 'basarili': False, 'neden': 'Satılacak eşya bulunmuyor.', 'altin': getattr(self, 'altin', 0), 'envanter_sayisi': 0}
-        esya = self.envanter.pop(0)
-        temel_fiyat = self.seviye * 10
-        kaynak_degeri = 0
-        if isinstance(esya, dict):
-            kaynak_degeri = esya.get('deger', esya.get('değer', 0))
-            if not isinstance(kaynak_degeri, (int, float)) or kaynak_degeri < 0:
-                kaynak_degeri = 0
-        satis_fiyati = max(temel_fiyat, int(kaynak_degeri))
-        eski_altin = getattr(self, 'altin', 0)
-        self.altin = eski_altin + satis_fiyati
-        return {'oyuncu': self.isim, 'basarili': True, 'satilan_esya': esya, 'kazanilan_altin': satis_fiyati, 'toplam_altin': self.altin, 'envanter_sayisi': len(self.envanter)}
 
-    def zindan_baskini(self):
-        if not hasattr(self, 'altin'):
-            self.altin = 0
-        if not hasattr(self, 'zindan_baskini_sayisi'):
-            self.zindan_baskini_sayisi = 0
-        ekipman_gucu = 0
-        for esya in self.envanter:
-            if isinstance(esya, dict):
-                deger = esya.get('deger', esya.get('değer', 0))
-                if isinstance(deger, (int, float)) and deger > 0:
-                    ekipman_gucu += int(deger)
-        eski_seviye = self.seviye
-        eski_altin = self.altin
-        baskin_numarasi = self.zindan_baskini_sayisi + 1
-        taban_xp = self.seviye * 25
-        ekipman_bonusu = min(ekipman_gucu, self.seviye * 40)
-        kazanilan_xp = taban_xp + ekipman_bonusu
-        kazanilan_altin = self.seviye * 15 + len(self.envanter) * 5
-        self.xp += kazanilan_xp
-        self.altin += kazanilan_altin
-        self.zindan_baskini_sayisi = baskin_numarasi
-        while self.xp >= self.seviye * 100:
-            self.seviye += 1
-        ganimet = {'ad': f'Zindan Ganimeti {baskin_numarasi}', 'seviye': self.seviye, 'deger': max(10, kazanilan_altin // 2)}
-        self.envanter.append(ganimet)
-        return {'oyuncu': self.isim, 'basarili': True, 'baskin_numarasi': baskin_numarasi, 'kazanilan_xp': kazanilan_xp, 'toplam_xp': self.xp, 'kazanilan_altin': kazanilan_altin, 'toplam_altin': self.altin, 'eski_seviye': eski_seviye, 'yeni_seviye': self.seviye, 'seviye_atlama_sayisi': self.seviye - eski_seviye, 'ekipman_gucu': ekipman_gucu, 'ganimet': ganimet, 'envanter_sayisi': len(self.envanter), 'onceki_altin': eski_altin}
+class Game:
+    """Deterministic-first game engine used by both tests and the exporter."""
 
-    def boss_savasi(self):
-        if not hasattr(self, 'altin'):
-            self.altin = 0
-        if not hasattr(self, 'boss_savasi_sayisi'):
-            self.boss_savasi_sayisi = 0
-        self.boss_savasi_sayisi += 1
-        savas_no = self.boss_savasi_sayisi
-        eski_seviye = self.seviye
-        eski_xp = self.xp
-        eski_altin = self.altin
-        ekipman_gucu = 0
-        for esya in self.envanter:
-            if isinstance(esya, dict):
-                deger = esya.get('deger', esya.get('değer', 0))
-                if isinstance(deger, (int, float)) and deger > 0:
-                    ekipman_gucu += int(deger)
-        oyuncu_gucu = self.seviye * 30 + ekipman_gucu + len(self.envanter) * 5
-        boss_gucu = self.seviye * 25 + savas_no * 8
-        basarili = oyuncu_gucu >= boss_gucu
-        if basarili:
-            kazanilan_xp = self.seviye * 35 + ekipman_gucu // 2
-            kazanilan_altin = self.seviye * 20 + len(self.envanter) * 7
-            self.xp += kazanilan_xp
-            self.altin += kazanilan_altin
-            while self.xp >= self.seviye * 100:
-                self.seviye += 1
-            ganimet = {'ad': f'Boss Ganimeti {savas_no}', 'seviye': self.seviye, 'deger': max(20, kazanilan_altin // 2)}
-            self.envanter.append(ganimet)
-            return {'oyuncu': self.isim, 'basarili': True, 'savas_numarasi': savas_no, 'oyuncu_gucu': oyuncu_gucu, 'boss_gucu': boss_gucu, 'kazanilan_xp': kazanilan_xp, 'toplam_xp': self.xp, 'kazanilan_altin': kazanilan_altin, 'toplam_altin': self.altin, 'eski_seviye': eski_seviye, 'yeni_seviye': self.seviye, 'seviye_atlama_sayisi': self.seviye - eski_seviye, 'ganimet': ganimet, 'envanter_sayisi': len(self.envanter)}
-        kaybedilen_xp = min(self.xp, self.seviye * 10)
-        self.xp -= kaybedilen_xp
-        ceza_altini = min(self.altin, self.seviye * 5)
-        self.altin -= ceza_altini
-        return {'oyuncu': self.isim, 'basarili': False, 'savas_numarasi': savas_no, 'oyuncu_gucu': oyuncu_gucu, 'boss_gucu': boss_gucu, 'kaybedilen_xp': kaybedilen_xp, 'toplam_xp': self.xp, 'kaybedilen_altin': ceza_altini, 'toplam_altin': self.altin, 'eski_seviye': eski_seviye, 'yeni_seviye': self.seviye, 'envanter_sayisi': len(self.envanter)}
+    def __init__(self, config: dict[str, Any] | None = None):
+        self.config = config or GAME_CONFIG
+        p = self.config["player"]
+        self.player = Player(
+            hp=int(p["max_hp"]),
+            energy=int(p["max_energy"]),
+            gold=int(p["starting_gold"]),
+        )
+        self.battle: Battle | None = None
 
-    def ekipman_buyule(self):
-        if not hasattr(self, 'altin'):
-            self.altin = 0
-        hedef_esya = None
-        hedef_index = -1
-        for index, esya in enumerate(self.envanter):
-            if isinstance(esya, dict):
-                hedef_esya = esya
-                hedef_index = index
-                break
-        if hedef_esya is None:
-            return {'oyuncu': self.isim, 'basarili': False, 'neden': 'Büyülenecek uygun bir ekipman bulunmuyor.', 'toplam_altin': self.altin, 'envanter_sayisi': len(self.envanter)}
-        mevcut_deger = hedef_esya.get('deger', hedef_esya.get('değer', 0))
-        if not isinstance(mevcut_deger, (int, float)) or mevcut_deger < 0:
-            mevcut_deger = 0
-        buyu_sayisi = hedef_esya.get('buyu_sayisi', 0)
-        if not isinstance(buyu_sayisi, int) or buyu_sayisi < 0:
-            buyu_sayisi = 0
-        maliyet = self.seviye * 12 + int(mevcut_deger * 0.25) + buyu_sayisi * 10
-        maliyet = max(15, maliyet)
-        if self.altin < maliyet:
-            return {'oyuncu': self.isim, 'basarili': False, 'neden': 'Büyüleme için yeterli altın bulunmuyor.', 'gereken_altin': maliyet, 'toplam_altin': self.altin, 'eksik_altin': maliyet - self.altin, 'esya': hedef_esya, 'envanter_sayisi': len(self.envanter)}
-        eski_seviye = self.seviye
-        eski_altin = self.altin
-        eski_deger = mevcut_deger
-        deger_artisi = max(10, self.seviye * 8 + buyu_sayisi * 4)
-        kazanilan_xp = self.seviye * 10 + deger_artisi // 2
-        self.altin -= maliyet
-        self.xp += kazanilan_xp
-        hedef_esya['deger'] = int(eski_deger + deger_artisi)
-        hedef_esya['buyu_sayisi'] = buyu_sayisi + 1
-        hedef_esya['buyulu'] = True
-        hedef_esya['buyu_adi'] = f'Kademe {buyu_sayisi + 1} Büyüsü'
-        while self.xp >= self.seviye * 100:
-            self.seviye += 1
-        return {'oyuncu': self.isim, 'basarili': True, 'esya_indexi': hedef_index, 'buyulenen_esya': hedef_esya, 'harcanan_altin': maliyet, 'onceki_altin': eski_altin, 'toplam_altin': self.altin, 'deger_artisi': deger_artisi, 'eski_deger': eski_deger, 'yeni_deger': hedef_esya['deger'], 'kazanilan_xp': kazanilan_xp, 'toplam_xp': self.xp, 'eski_seviye': eski_seviye, 'yeni_seviye': self.seviye, 'seviye_atlama_sayisi': self.seviye - eski_seviye, 'envanter_sayisi': len(self.envanter)}
+    def _enemy_for_seed(self, seed: int = 0) -> dict[str, Any]:
+        enemies = self.config["enemies"]
+        if not enemies:
+            raise ValueError("enemies cannot be empty")
+        return dict(enemies[seed % len(enemies)])
 
-    def gizli_gecit_kesfi(self):
-        if not hasattr(self, 'altin'):
-            self.altin = 0
-        if not hasattr(self, 'gecit_kesfi_sayisi'):
-            self.gecit_kesfi_sayisi = 0
-        if not self.envanter:
-            return {'oyuncu': self.isim, 'basarili': False, 'neden': 'Gizli geçidi açmak için en az bir eşya gerekli.', 'toplam_altin': self.altin, 'envanter_sayisi': 0}
-        deneme_no = self.gecit_kesfi_sayisi + 1
-        anahtar_esya = self.envanter[0]
-        anahtar_degeri = 0
-        if isinstance(anahtar_esya, dict):
-            anahtar_degeri = anahtar_esya.get('deger', anahtar_esya.get('değer', 0))
-            if not isinstance(anahtar_degeri, (int, float)) or anahtar_degeri < 0:
-                anahtar_degeri = 0
-        diger_esya_gucu = 0
-        for esya in self.envanter[1:]:
-            if isinstance(esya, dict):
-                deger = esya.get('deger', esya.get('değer', 0))
-                if isinstance(deger, (int, float)) and deger > 0:
-                    diger_esya_gucu += int(deger)
-        kesif_gucu = self.seviye * 35 + int(anahtar_degeri) + min(diger_esya_gucu, self.seviye * 30)
-        gecit_zorlugu = self.seviye * 30 + deneme_no * 12
-        basarili = kesif_gucu >= gecit_zorlugu
-        eski_seviye = self.seviye
-        eski_xp = self.xp
-        eski_altin = self.altin
-        self.gecit_kesfi_sayisi = deneme_no
-        if not basarili:
-            kaybedilen_xp = min(self.xp, self.seviye * 8)
-            kaybedilen_altin = min(self.altin, self.seviye * 6)
-            self.xp -= kaybedilen_xp
-            self.altin -= kaybedilen_altin
-            return {'oyuncu': self.isim, 'basarili': False, 'kesif_numarasi': deneme_no, 'kesif_gucu': kesif_gucu, 'gecit_zorlugu': gecit_zorlugu, 'kaybedilen_xp': kaybedilen_xp, 'toplam_xp': self.xp, 'kaybedilen_altin': kaybedilen_altin, 'toplam_altin': self.altin, 'eski_seviye': eski_seviye, 'yeni_seviye': self.seviye, 'kullanilan_esya': anahtar_esya, 'envanter_sayisi': len(self.envanter)}
-        kullanilan_esya = self.envanter.pop(0)
-        kazanilan_xp = self.seviye * 30 + int(anahtar_degeri) // 2
-        kazanilan_altin = self.seviye * 25 + int(anahtar_degeri) // 3
-        self.xp += kazanilan_xp
-        self.altin += kazanilan_altin
-        while self.xp >= self.seviye * 100:
-            self.seviye += 1
-        bulunan_eser = {'ad': f'Gizli Geçit Eseri {deneme_no}', 'seviye': self.seviye, 'deger': max(25, kazanilan_altin + self.seviye * 5), 'kaynak_esya': kullanilan_esya}
-        self.envanter.append(bulunan_eser)
-        return {'oyuncu': self.isim, 'basarili': True, 'kesif_numarasi': deneme_no, 'kesif_gucu': kesif_gucu, 'gecit_zorlugu': gecit_zorlugu, 'kullanilan_esya': kullanilan_esya, 'bulunan_eser': bulunan_eser, 'kazanilan_xp': kazanilan_xp, 'toplam_xp': self.xp, 'kazanilan_altin': kazanilan_altin, 'toplam_altin': self.altin, 'eski_seviye': eski_seviye, 'yeni_seviye': self.seviye, 'seviye_atlama_sayisi': self.seviye - eski_seviye, 'envanter_sayisi': len(self.envanter)}
+    def start_battle(self, seed: int = 0) -> dict[str, Any]:
+        enemy = self._enemy_for_seed(seed)
+        self.battle = Battle(
+            enemy=enemy,
+            enemy_hp=int(enemy["hp"]),
+            log=[f"{enemy['name']} ortaya çıktı."],
+        )
+        return self.snapshot()
 
-    def lonca_gorevi(self):
-        if not hasattr(self, 'altin'):
-            self.altin = 0
-        if not hasattr(self, 'lonca_gorevi_sayisi'):
-            self.lonca_gorevi_sayisi = 0
-        if not hasattr(self, 'lonca_itibari'):
-            self.lonca_itibari = 0
-        gorev_numarasi = self.lonca_gorevi_sayisi + 1
-        ekipman_degeri = 0
-        for esya in self.envanter:
-            if isinstance(esya, dict):
-                deger = esya.get('deger', esya.get('değer', 0))
-                if isinstance(deger, (int, float)) and deger > 0:
-                    ekipman_degeri += int(deger)
-        oyuncu_gucu = self.seviye * 35 + min(ekipman_degeri, self.seviye * 50) + len(self.envanter) * 4
-        gorev_zorlugu = self.seviye * 28 + gorev_numarasi * 7
-        eski_seviye = self.seviye
-        eski_xp = self.xp
-        eski_altin = self.altin
-        self.lonca_gorevi_sayisi = gorev_numarasi
-        if oyuncu_gucu < gorev_zorlugu:
-            kaybedilen_xp = min(self.xp, self.seviye * 6)
-            kaybedilen_altin = min(self.altin, self.seviye * 4)
-            self.xp -= kaybedilen_xp
-            self.altin -= kaybedilen_altin
-            return {'oyuncu': self.isim, 'basarili': False, 'gorev_numarasi': gorev_numarasi, 'oyuncu_gucu': oyuncu_gucu, 'gorev_zorlugu': gorev_zorlugu, 'kaybedilen_xp': kaybedilen_xp, 'toplam_xp': self.xp, 'kaybedilen_altin': kaybedilen_altin, 'toplam_altin': self.altin, 'eski_seviye': eski_seviye, 'yeni_seviye': self.seviye, 'lonca_itibari': self.lonca_itibari, 'envanter_sayisi': len(self.envanter)}
-        kazanilan_xp = self.seviye * 22 + min(ekipman_degeri, self.seviye * 30) // 2
-        kazanilan_altin = self.seviye * 16 + len(self.envanter) * 6
-        kazanilan_itibar = 10 + self.seviye * 3
-        self.xp += kazanilan_xp
-        self.altin += kazanilan_altin
-        self.lonca_itibari += kazanilan_itibar
-        while self.xp >= self.seviye * 100:
-            self.seviye += 1
-        odul = {'ad': f'Lonca Ödülü {gorev_numarasi}', 'seviye': self.seviye, 'deger': max(15, kazanilan_altin // 2), 'itibar': kazanilan_itibar}
-        self.envanter.append(odul)
-        return {'oyuncu': self.isim, 'basarili': True, 'gorev_numarasi': gorev_numarasi, 'oyuncu_gucu': oyuncu_gucu, 'gorev_zorlugu': gorev_zorlugu, 'kazanilan_xp': kazanilan_xp, 'toplam_xp': self.xp, 'kazanilan_altin': kazanilan_altin, 'toplam_altin': self.altin, 'kazanilan_itibar': kazanilan_itibar, 'lonca_itibari': self.lonca_itibari, 'eski_seviye': eski_seviye, 'yeni_seviye': self.seviye, 'seviye_atlama_sayisi': self.seviye - eski_seviye, 'odul': odul, 'envanter_sayisi': len(self.envanter), 'onceki_xp': eski_xp, 'onceki_altin': eski_altin}
+    def _find_action(self, action_id: str) -> dict[str, Any]:
+        for action in self.config["actions"]:
+            if action["id"] == action_id:
+                return action
+        raise ValueError(f"unknown action: {action_id}")
 
-    def hazine_avi(self):
-        if not hasattr(self, 'altin'):
-            self.altin = 0
-        if not hasattr(self, 'hazine_avi_sayisi'):
-            self.hazine_avi_sayisi = 0
-        av_numarasi = self.hazine_avi_sayisi + 1
-        ekipman_degeri = 0
-        for esya in self.envanter:
-            if isinstance(esya, dict):
-                deger = esya.get('deger', esya.get('değer', 0))
-                if isinstance(deger, (int, float)) and deger > 0:
-                    ekipman_degeri += int(deger)
-        kesif_gucu = self.seviye * 40 + min(ekipman_degeri, self.seviye * 60) + len(self.envanter) * 6
-        hazine_zorlugu = self.seviye * 32 + av_numarasi * 9
-        eski_seviye = self.seviye
-        eski_xp = self.xp
-        eski_altin = self.altin
-        self.hazine_avi_sayisi = av_numarasi
-        if kesif_gucu < hazine_zorlugu:
-            kaybedilen_xp = min(self.xp, self.seviye * 5)
-            self.xp -= kaybedilen_xp
-            return {'oyuncu': self.isim, 'basarili': False, 'av_numarasi': av_numarasi, 'kesif_gucu': kesif_gucu, 'hazine_zorlugu': hazine_zorlugu, 'kaybedilen_xp': kaybedilen_xp, 'toplam_xp': self.xp, 'toplam_altin': self.altin, 'eski_seviye': eski_seviye, 'yeni_seviye': self.seviye, 'envanter_sayisi': len(self.envanter)}
-        kazanilan_xp = self.seviye * 28 + min(ekipman_degeri, self.seviye * 50) // 2
-        kazanilan_altin = self.seviye * 22 + len(self.envanter) * 8
-        self.xp += kazanilan_xp
-        self.altin += kazanilan_altin
-        while self.xp >= self.seviye * 100:
-            self.seviye += 1
-        hazine = {'ad': f'Kadim Hazine {av_numarasi}', 'seviye': self.seviye, 'deger': max(25, kazanilan_altin // 2 + self.seviye * 5), 'av_numarasi': av_numarasi}
-        self.envanter.append(hazine)
-        return {'oyuncu': self.isim, 'basarili': True, 'av_numarasi': av_numarasi, 'kesif_gucu': kesif_gucu, 'hazine_zorlugu': hazine_zorlugu, 'kazanilan_xp': kazanilan_xp, 'toplam_xp': self.xp, 'kazanilan_altin': kazanilan_altin, 'toplam_altin': self.altin, 'eski_seviye': eski_seviye, 'yeni_seviye': self.seviye, 'seviye_atlama_sayisi': self.seviye - eski_seviye, 'hazine': hazine, 'envanter_sayisi': len(self.envanter), 'onceki_xp': eski_xp, 'onceki_altin': eski_altin}
+    def _gain_xp(self, amount: int) -> None:
+        progress = self.config["progression"]
+        self.player.xp += max(0, int(amount))
+        threshold = max(1, int(progress["xp_to_level"]))
+        while self.player.xp >= threshold:
+            self.player.xp -= threshold
+            self.player.level += 1
 
-    def kale_savunmasi(self):
-        if not hasattr(self, 'altin'):
-            self.altin = 0
-        if not hasattr(self, 'kale_savunmasi_sayisi'):
-            self.kale_savunmasi_sayisi = 0
-        if not hasattr(self, 'savunma_itibari'):
-            self.savunma_itibari = 0
-        dalga_numarasi = self.kale_savunmasi_sayisi + 1
-        ekipman_gucu = 0
-        for esya in self.envanter:
-            if isinstance(esya, dict):
-                deger = esya.get('deger', esya.get('değer', 0))
-                if isinstance(deger, (int, float)) and deger > 0:
-                    ekipman_gucu += int(deger)
-        savunma_gucu = self.seviye * 40 + min(ekipman_gucu, self.seviye * 70) + len(self.envanter) * 5
-        isgal_zorlugu = self.seviye * 35 + dalga_numarasi * 10
-        eski_seviye = self.seviye
-        eski_xp = self.xp
-        eski_altin = self.altin
-        self.kale_savunmasi_sayisi = dalga_numarasi
-        if savunma_gucu < isgal_zorlugu:
-            kaybedilen_xp = min(self.xp, self.seviye * 7)
-            kaybedilen_altin = min(self.altin, self.seviye * 5)
-            self.xp -= kaybedilen_xp
-            self.altin -= kaybedilen_altin
-            return {'oyuncu': self.isim, 'basarili': False, 'dalga_numarasi': dalga_numarasi, 'savunma_gucu': savunma_gucu, 'isgal_zorlugu': isgal_zorlugu, 'kaybedilen_xp': kaybedilen_xp, 'toplam_xp': self.xp, 'kaybedilen_altin': kaybedilen_altin, 'toplam_altin': self.altin, 'eski_seviye': eski_seviye, 'yeni_seviye': self.seviye, 'savunma_itibari': self.savunma_itibari, 'envanter_sayisi': len(self.envanter)}
-        kazanilan_xp = self.seviye * 30 + min(ekipman_gucu, self.seviye * 50) // 2
-        kazanilan_altin = self.seviye * 18 + len(self.envanter) * 6
-        kazanilan_itibar = 8 + self.seviye * 2
-        self.xp += kazanilan_xp
-        self.altin += kazanilan_altin
-        self.savunma_itibari += kazanilan_itibar
-        while self.xp >= self.seviye * 100:
-            self.seviye += 1
-        tahkimat = {'ad': f'Kale Savunma Nişanı {dalga_numarasi}', 'seviye': self.seviye, 'deger': max(20, kazanilan_altin // 2), 'itibar': kazanilan_itibar, 'dalga': dalga_numarasi}
-        self.envanter.append(tahkimat)
-        return {'oyuncu': self.isim, 'basarili': True, 'dalga_numarasi': dalga_numarasi, 'savunma_gucu': savunma_gucu, 'isgal_zorlugu': isgal_zorlugu, 'kazanilan_xp': kazanilan_xp, 'toplam_xp': self.xp, 'kazanilan_altin': kazanilan_altin, 'toplam_altin': self.altin, 'kazanilan_itibar': kazanilan_itibar, 'savunma_itibari': self.savunma_itibari, 'eski_seviye': eski_seviye, 'yeni_seviye': self.seviye, 'seviye_atlama_sayisi': self.seviye - eski_seviye, 'tahkimat': tahkimat, 'envanter_sayisi': len(self.envanter), 'onceki_xp': eski_xp, 'onceki_altin': eski_altin}
+    def _enemy_turn(self) -> None:
+        assert self.battle is not None
+        damage = max(0, int(self.battle.enemy["attack"]) - int(self.config["player"]["base_defense"]))
+        blocked = min(damage, self.battle.shield)
+        damage -= blocked
+        self.battle.shield -= blocked
+        self.player.hp = max(0, self.player.hp - damage)
+        if blocked:
+            self.battle.log.append(f"{self.battle.enemy['name']} vurdu: {damage} hasar, {blocked} engellendi.")
+        else:
+            self.battle.log.append(f"{self.battle.enemy['name']} vurdu: {damage} hasar.")
+        self.player.energy = min(int(self.config["player"]["max_energy"]), self.player.energy + 1)
+        if self.player.hp <= 0:
+            self.battle.ended = True
+            self.battle.result = "loss"
+            self._gain_xp(int(self.config["progression"]["xp_per_loss"]))
 
-    def yetenek_ustaligi(self):
-        if not hasattr(self, 'altin'):
-            self.altin = 0
-        if not hasattr(self, 'yetenek_ustaligi_sayisi'):
-            self.yetenek_ustaligi_sayisi = 0
-        if not hasattr(self, 'yetenek_puanlari'):
-            self.yetenek_puanlari = 0
-        if not hasattr(self, 'yetenekler'):
-            self.yetenekler = []
-        mevcut_ustalik = self.yetenek_ustaligi_sayisi
-        maliyet = self.seviye * 20 + mevcut_ustalik * 15
-        if self.altin < maliyet:
-            return {'oyuncu': self.isim, 'basarili': False, 'neden': 'Yetenek eğitimi için yeterli altın bulunmuyor.', 'gereken_altin': maliyet, 'toplam_altin': self.altin, 'eksik_altin': maliyet - self.altin, 'ustalik_seviyesi': mevcut_ustalik, 'yetenek_sayisi': len(self.yetenekler)}
-        eski_seviye = self.seviye
-        eski_xp = self.xp
-        eski_altin = self.altin
-        self.altin -= maliyet
-        self.yetenek_ustaligi_sayisi += 1
-        kazanilan_xp = self.seviye * 18 + mevcut_ustalik * 10
-        kazanilan_puan = 1 + self.seviye // 5
-        self.xp += kazanilan_xp
-        self.yetenek_puanlari += kazanilan_puan
-        while self.xp >= self.seviye * 100:
-            self.seviye += 1
-        yetenek_adlari = ['Çelik İrade', 'Hızlı Refleks', 'Kritik Darbe', 'Savaş Sezgisi', 'Efsanevi Dayanıklılık']
-        yetenek_adi = yetenek_adlari[mevcut_ustalik % len(yetenek_adlari)]
-        yetenek = {'ad': yetenek_adi, 'kademe': mevcut_ustalik + 1, 'puan': kazanilan_puan, 'acilma_seviyesi': self.seviye}
-        self.yetenekler.append(yetenek)
-        return {'oyuncu': self.isim, 'basarili': True, 'egitim_numarasi': self.yetenek_ustaligi_sayisi, 'egitilen_yetenek': yetenek, 'harcanan_altin': maliyet, 'onceki_altin': eski_altin, 'toplam_altin': self.altin, 'kazanilan_xp': kazanilan_xp, 'onceki_xp': eski_xp, 'toplam_xp': self.xp, 'kazanilan_yetenek_puani': kazanilan_puan, 'toplam_yetenek_puani': self.yetenek_puanlari, 'eski_seviye': eski_seviye, 'yeni_seviye': self.seviye, 'seviye_atlama_sayisi': self.seviye - eski_seviye, 'ustalik_seviyesi': self.yetenek_ustaligi_sayisi, 'yetenek_sayisi': len(self.yetenekler)}
+    def act(self, action_id: str, roll: float = 0.5) -> dict[str, Any]:
+        if self.battle is None:
+            raise RuntimeError("battle not started")
+        if self.battle.ended:
+            return self.snapshot()
 
-    def yoldas_egitimi(self):
-        if not hasattr(self, 'altin'):
-            self.altin = 0
-        if not hasattr(self, 'yoldaslar'):
-            self.yoldaslar = []
-        if not hasattr(self, 'yoldas_egitim_sayisi'):
-            self.yoldas_egitim_sayisi = 0
-        if not hasattr(self, 'yoldas_bonusu'):
-            self.yoldas_bonusu = 0
-        egitim_numarasi = self.yoldas_egitim_sayisi + 1
-        maliyet = self.seviye * 18 + len(self.yoldaslar) * 25
-        if self.altin < maliyet:
-            return {'oyuncu': self.isim, 'basarili': False, 'neden': 'Yoldaş eğitimi için yeterli altın bulunmuyor.', 'gereken_altin': maliyet, 'toplam_altin': self.altin, 'eksik_altin': maliyet - self.altin, 'yoldas_sayisi': len(self.yoldaslar), 'yoldas_bonusu': self.yoldas_bonusu}
-        eski_seviye = self.seviye
-        eski_xp = self.xp
-        eski_altin = self.altin
-        eski_bonus = self.yoldas_bonusu
-        yoldas_adlari = ['Kurt Yoldaşı', 'Kartal Gözcüsü', 'Çelik Golem', 'Gölge Tilki']
-        yoldas_adi = yoldas_adlari[len(self.yoldaslar) % len(yoldas_adlari)]
-        yoldas_kademesi = len(self.yoldaslar) + 1
-        bonus = self.seviye * 6 + yoldas_kademesi * 4
-        kazanilan_xp = self.seviye * 14 + yoldas_kademesi * 8
-        self.altin -= maliyet
-        self.xp += kazanilan_xp
-        self.yoldas_egitim_sayisi = egitim_numarasi
-        self.yoldas_bonusu += bonus
-        while self.xp >= self.seviye * 100:
-            self.seviye += 1
-        yoldas = {'ad': yoldas_adi, 'kademe': yoldas_kademesi, 'savas_bonusu': bonus, 'egitim_seviyesi': self.seviye}
-        self.yoldaslar.append(yoldas)
-        return {'oyuncu': self.isim, 'basarili': True, 'egitim_numarasi': egitim_numarasi, 'egitilen_yoldas': yoldas, 'harcanan_altin': maliyet, 'onceki_altin': eski_altin, 'toplam_altin': self.altin, 'kazanilan_xp': kazanilan_xp, 'onceki_xp': eski_xp, 'toplam_xp': self.xp, 'eski_seviye': eski_seviye, 'yeni_seviye': self.seviye, 'seviye_atlama_sayisi': self.seviye - eski_seviye, 'bonus_artisi': bonus, 'onceki_yoldas_bonusu': eski_bonus, 'yoldas_bonusu': self.yoldas_bonusu, 'yoldas_sayisi': len(self.yoldaslar)}
+        action = self._find_action(action_id)
+        energy_cost = int(action.get("energy", 0))
+        if self.player.energy < energy_cost:
+            self.battle.log.append("Yeterli enerji yok.")
+            return self.snapshot()
 
-    def efsanevi_eser_uretimi(self):
-        if not hasattr(self, 'altin'):
-            self.altin = 0
-        uygun_esyalar = []
-        uygun_indeksler = []
-        for indeks, esya in enumerate(self.envanter):
-            if isinstance(esya, dict):
-                deger = esya.get('deger', esya.get('değer', 0))
-                if not isinstance(deger, (int, float)) or deger < 0:
-                    deger = 0
-                uygun_esyalar.append(esya)
-                uygun_indeksler.append(indeks)
-                if len(uygun_esyalar) == 3:
-                    break
-        if len(uygun_esyalar) < 3:
-            return {'oyuncu': self.isim, 'basarili': False, 'neden': 'Efsanevi eser üretmek için en az üç uygun eşya gerekli.', 'toplam_altin': self.altin, 'envanter_sayisi': len(self.envanter)}
-        toplam_kaynak_degeri = 0
-        for esya in uygun_esyalar:
-            deger = esya.get('deger', esya.get('değer', 0))
-            if not isinstance(deger, (int, float)) or deger < 0:
-                deger = 0
-            toplam_kaynak_degeri += int(deger)
-        maliyet = max(30, self.seviye * 25 + toplam_kaynak_degeri // 2)
-        if self.altin < maliyet:
-            return {'oyuncu': self.isim, 'basarili': False, 'neden': 'Efsanevi eser üretimi için yeterli altın bulunmuyor.', 'gereken_altin': maliyet, 'toplam_altin': self.altin, 'eksik_altin': maliyet - self.altin, 'kaynak_degeri': toplam_kaynak_degeri, 'envanter_sayisi': len(self.envanter)}
-        eski_seviye = self.seviye
-        eski_xp = self.xp
-        eski_altin = self.altin
-        for indeks in reversed(uygun_indeksler):
-            self.envanter.pop(indeks)
-        self.altin -= maliyet
-        kazanilan_xp = self.seviye * 30 + toplam_kaynak_degeri // 3
-        self.xp += kazanilan_xp
-        while self.xp >= self.seviye * 100:
-            self.seviye += 1
-        eser_degeri = max(60, toplam_kaynak_degeri + self.seviye * 20 + maliyet // 2)
-        efsanevi_eser = {'ad': f'Efsanevi Eser {self.seviye}', 'seviye': self.seviye, 'deger': eser_degeri, 'kalite': 'efsanevi', 'kaynaklar': uygun_esyalar}
-        self.envanter.append(efsanevi_eser)
-        return {'oyuncu': self.isim, 'basarili': True, 'uretilen_eser': efsanevi_eser, 'kullanilan_kaynaklar': uygun_esyalar, 'harcanan_altin': maliyet, 'onceki_altin': eski_altin, 'toplam_altin': self.altin, 'kazanilan_xp': kazanilan_xp, 'onceki_xp': eski_xp, 'toplam_xp': self.xp, 'eski_seviye': eski_seviye, 'yeni_seviye': self.seviye, 'seviye_atlama_sayisi': self.seviye - eski_seviye, 'kaynak_degeri': toplam_kaynak_degeri, 'envanter_sayisi': len(self.envanter)}
+        self.player.energy -= energy_cost
+        self._apply_effects(action.get("effects", []), roll)
 
-    def canavar_avı(self):
-        if not hasattr(self, 'altin'):
-            self.altin = 0
-        if not hasattr(self, 'canavar_avı_sayisi'):
-            self.canavar_avı_sayisi = 0
-        if not hasattr(self, 'canavar_ünü'):
-            self.canavar_ünü = 0
-        if not hasattr(self, 'yoldas_bonusu'):
-            self.yoldas_bonusu = 0
-        av_numarasi = self.canavar_avı_sayisi + 1
-        ekipman_gücü = 0
-        for eşya in self.envanter:
-            if isinstance(eşya, dict):
-                değer = eşya.get('deger', eşya.get('değer', 0))
-                if isinstance(değer, (int, float)) and değer > 0:
-                    ekipman_gücü += int(değer)
-        savaş_gücü = self.seviye * 38 + min(ekipman_gücü, self.seviye * 75) + self.yoldas_bonusu + len(self.envanter) * 4
-        canavar_gücü = self.seviye * 30 + av_numarasi * 8
-        eski_seviye = self.seviye
-        eski_xp = self.xp
-        eski_altin = self.altin
-        self.canavar_avı_sayisi = av_numarasi
-        if savaş_gücü < canavar_gücü:
-            kaybedilen_xp = min(self.xp, self.seviye * 8)
-            kaybedilen_altin = min(self.altin, self.seviye * 4)
-            self.xp -= kaybedilen_xp
-            self.altin -= kaybedilen_altin
-            return {'oyuncu': self.isim, 'basarili': False, 'av_numarasi': av_numarasi, 'savaş_gücü': savaş_gücü, 'canavar_gücü': canavar_gücü, 'kaybedilen_xp': kaybedilen_xp, 'toplam_xp': self.xp, 'kaybedilen_altin': kaybedilen_altin, 'toplam_altin': self.altin, 'eski_seviye': eski_seviye, 'yeni_seviye': self.seviye, 'canavar_ünü': self.canavar_ünü, 'envanter_sayisi': len(self.envanter)}
-        kazanılan_xp = self.seviye * 32 + min(ekipman_gücü, self.seviye * 60) // 2
-        kazanılan_altin = self.seviye * 20 + len(self.envanter) * 7
-        kazanılan_ünü = 6 + self.seviye * 2
-        self.xp += kazanılan_xp
-        self.altin += kazanılan_altin
-        self.canavar_ünü += kazanılan_ünü
-        while self.xp >= self.seviye * 100:
-            self.seviye += 1
-        ganimet = {'ad': f'Canavar Avı Ganimeti {av_numarasi}', 'seviye': self.seviye, 'deger': max(20, kazanılan_altin // 2 + self.seviye * 3), 'av_numarasi': av_numarasi, 'canavar_ünü': kazanılan_ünü}
-        self.envanter.append(ganimet)
-        return {'oyuncu': self.isim, 'basarili': True, 'av_numarasi': av_numarasi, 'savaş_gücü': savaş_gücü, 'canavar_gücü': canavar_gücü, 'kazanılan_xp': kazanılan_xp, 'toplam_xp': self.xp, 'kazanılan_altin': kazanılan_altin, 'toplam_altin': self.altin, 'kazanılan_ünü': kazanılan_ünü, 'canavar_ünü': self.canavar_ünü, 'eski_seviye': eski_seviye, 'yeni_seviye': self.seviye, 'seviye_atlama_sayisi': self.seviye - eski_seviye, 'ganimet': ganimet, 'envanter_sayisi': len(self.envanter), 'onceki_xp': eski_xp, 'onceki_altin': eski_altin}
-if __name__ == '__main__':
-    hero = Oyuncu()
-    hero.durum_raporu()
-    hero.xp_kazan(120)
-    hero.durum_raporu()
+        if self.battle.enemy_hp <= 0:
+            self._win_battle()
+            return self.snapshot()
+
+        self._enemy_turn()
+        self.battle.turn += 1
+        return self.snapshot()
+
+    def _apply_effects(self, effects: list[dict[str, Any]], roll: float) -> None:
+        assert self.battle is not None
+        p = self.config["player"]
+        for effect in effects:
+            kind = effect.get("type")
+            amount = effect.get("amount", 0)
+            if kind == "damage":
+                multiplier = float(amount)
+                raw = float(p["base_attack"]) * multiplier
+                crit_chance = float(p.get("crit_chance", 0.0))
+                crit_multiplier = float(p.get("crit_multiplier", 1.0))
+                critical = roll < crit_chance
+                if critical:
+                    raw *= crit_multiplier
+                damage = max(1, int(math.floor(raw)) - int(self.battle.enemy.get("defense", 0)))
+                self.battle.enemy_hp = max(0, self.battle.enemy_hp - damage)
+                marker = " KRİTİK!" if critical else ""
+                self.battle.log.append(f"Saldırı: {damage} hasar.{marker}")
+            elif kind == "heal":
+                amount_i = max(0, int(amount))
+                self.player.hp = min(int(p["max_hp"]), self.player.hp + amount_i)
+                self.battle.log.append(f"+{amount_i} can.")
+            elif kind == "shield":
+                amount_i = max(0, int(amount))
+                self.battle.shield += amount_i
+                self.battle.log.append(f"Kalkan +{amount_i}.")
+            elif kind == "energy":
+                max_energy = int(p["max_energy"])
+                self.player.energy = min(max_energy, max(0, self.player.energy + int(amount)))
+                self.battle.log.append(f"Enerji {amount:+d}.")
+            else:
+                raise ValueError(f"unsupported effect type: {kind}")
+
+    def _win_battle(self) -> None:
+        assert self.battle is not None
+        progress = self.config["progression"]
+        enemy = self.battle.enemy
+        xp = int(enemy.get("xp", progress["xp_per_win"]))
+        gold = int(enemy.get("gold", progress["gold_per_win"]))
+        self._gain_xp(xp)
+        self.player.gold += gold
+        self.player.hp = min(
+            int(self.config["player"]["max_hp"]),
+            self.player.hp + int(progress["heal_after_battle"]),
+        )
+        self.battle.ended = True
+        self.battle.result = "win"
+        self.battle.log.append(f"Kazandın: +{xp} XP, +{gold} altın.")
+
+    def buy_potion(self) -> bool:
+        shop = self.config["shop"]
+        cost = int(shop["potion_cost"])
+        heal = int(shop["potion_heal"])
+        if self.player.gold < cost or self.player.hp >= int(self.config["player"]["max_hp"]):
+            return False
+        self.player.gold -= cost
+        self.player.hp = min(int(self.config["player"]["max_hp"]), self.player.hp + heal)
+        self.player.inventory.append("potion")
+        return True
+
+    def snapshot(self) -> dict[str, Any]:
+        battle = None
+        if self.battle is not None:
+            battle = {
+                "enemy": self.battle.enemy,
+                "enemy_hp": self.battle.enemy_hp,
+                "shield": self.battle.shield,
+                "turn": self.battle.turn,
+                "log": self.battle.log[-8:],
+                "ended": self.battle.ended,
+                "result": self.battle.result,
+            }
+        return {"player": asdict(self.player), "battle": battle}
+
+
+def read_generation() -> int:
+    try:
+        return max(0, int(COUNTER_FILE.read_text(encoding="utf-8").strip()))
+    except (FileNotFoundError, ValueError):
+        return 0
+
+
+def write_generation(value: int) -> None:
+    COUNTER_FILE.write_text(str(max(0, value)) + "\n", encoding="utf-8")
+
+
+def load_history() -> list[dict[str, Any]]:
+    try:
+        value = json.loads(HISTORY_FILE.read_text(encoding="utf-8"))
+        return value if isinstance(value, list) else []
+    except (FileNotFoundError, json.JSONDecodeError):
+        return []
+
+
+def append_history(event: dict[str, Any]) -> None:
+    history = load_history()
+    history.append(event)
+    HISTORY_FILE.write_text(json.dumps(history[-100:], ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def self_test() -> dict[str, Any]:
+    """A compact smoke suite. Red calls this before any promotion."""
+    game = Game(GAME_CONFIG)
+    start = game.start_battle(seed=0)
+    assert start["battle"]["enemy_hp"] > 0
+
+    before = game.snapshot()["battle"]["enemy_hp"]
+    game.act("attack", roll=0.99)
+    after = game.snapshot()["battle"]["enemy_hp"]
+    assert after < before, "attack must reduce enemy HP"
+
+    game2 = Game(GAME_CONFIG)
+    game2.start_battle(seed=1)
+    game2.player.hp = 70
+    hp_before = game2.player.hp
+    game2.act("heal", roll=0.99)
+    assert game2.player.hp > hp_before, "heal must restore real player HP"
+    assert game2.player.hp <= GAME_CONFIG["player"]["max_hp"], "heal must respect max HP"
+
+    game3 = Game(GAME_CONFIG)
+    game3.start_battle(seed=1)
+    potion = game3.buy_potion()
+    assert potion is False, "potion should not buy at full HP"
+
+    return {
+        "ok": True,
+        "checks": [
+            "battle starts",
+            "attack damages enemy",
+            "heal restores real hp and respects max hp",
+            "shop refuses wasteful full-hp purchase",
+        ],
+    }
+
+
+def public_config() -> dict[str, Any]:
+    return json.loads(json.dumps(GAME_CONFIG))
+
+
+def export_web() -> None:
+    DOCS.mkdir(parents=True, exist_ok=True)
+    generation = read_generation()
+    smoke = self_test()
+    history = load_history()
+    payload = {
+        "system": {
+            "title": TITLE,
+            "generation": generation,
+            "status": "LIVE",
+            "rules_version": GAME_CONFIG.get("rules_version", 1),
+            "last_event": history[-1] if history else None,
+            "history_tail": history[-12:],
+        },
+        "game": public_config(),
+        "smoke_test": smoke,
+    }
+    DATA_FILE.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--export-web", action="store_true")
+    parser.add_argument("--self-test", action="store_true")
+    args = parser.parse_args()
+
+    if args.self_test:
+        print(json.dumps(self_test(), ensure_ascii=False))
+        return
+    if args.export_web:
+        export_web()
+        print(f"web export: {DATA_FILE}")
+        return
+    parser.error("use --export-web or --self-test")
+
+
+if __name__ == "__main__":
+    main()
