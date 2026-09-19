@@ -412,6 +412,46 @@ class Oyuncu:
         yoldas = {'ad': yoldas_adi, 'kademe': yoldas_kademesi, 'savas_bonusu': bonus, 'egitim_seviyesi': self.seviye}
         self.yoldaslar.append(yoldas)
         return {'oyuncu': self.isim, 'basarili': True, 'egitim_numarasi': egitim_numarasi, 'egitilen_yoldas': yoldas, 'harcanan_altin': maliyet, 'onceki_altin': eski_altin, 'toplam_altin': self.altin, 'kazanilan_xp': kazanilan_xp, 'onceki_xp': eski_xp, 'toplam_xp': self.xp, 'eski_seviye': eski_seviye, 'yeni_seviye': self.seviye, 'seviye_atlama_sayisi': self.seviye - eski_seviye, 'bonus_artisi': bonus, 'onceki_yoldas_bonusu': eski_bonus, 'yoldas_bonusu': self.yoldas_bonusu, 'yoldas_sayisi': len(self.yoldaslar)}
+
+    def efsanevi_eser_uretimi(self):
+        if not hasattr(self, 'altin'):
+            self.altin = 0
+        uygun_esyalar = []
+        uygun_indeksler = []
+        for indeks, esya in enumerate(self.envanter):
+            if isinstance(esya, dict):
+                deger = esya.get('deger', esya.get('değer', 0))
+                if not isinstance(deger, (int, float)) or deger < 0:
+                    deger = 0
+                uygun_esyalar.append(esya)
+                uygun_indeksler.append(indeks)
+                if len(uygun_esyalar) == 3:
+                    break
+        if len(uygun_esyalar) < 3:
+            return {'oyuncu': self.isim, 'basarili': False, 'neden': 'Efsanevi eser üretmek için en az üç uygun eşya gerekli.', 'toplam_altin': self.altin, 'envanter_sayisi': len(self.envanter)}
+        toplam_kaynak_degeri = 0
+        for esya in uygun_esyalar:
+            deger = esya.get('deger', esya.get('değer', 0))
+            if not isinstance(deger, (int, float)) or deger < 0:
+                deger = 0
+            toplam_kaynak_degeri += int(deger)
+        maliyet = max(30, self.seviye * 25 + toplam_kaynak_degeri // 2)
+        if self.altin < maliyet:
+            return {'oyuncu': self.isim, 'basarili': False, 'neden': 'Efsanevi eser üretimi için yeterli altın bulunmuyor.', 'gereken_altin': maliyet, 'toplam_altin': self.altin, 'eksik_altin': maliyet - self.altin, 'kaynak_degeri': toplam_kaynak_degeri, 'envanter_sayisi': len(self.envanter)}
+        eski_seviye = self.seviye
+        eski_xp = self.xp
+        eski_altin = self.altin
+        for indeks in reversed(uygun_indeksler):
+            self.envanter.pop(indeks)
+        self.altin -= maliyet
+        kazanilan_xp = self.seviye * 30 + toplam_kaynak_degeri // 3
+        self.xp += kazanilan_xp
+        while self.xp >= self.seviye * 100:
+            self.seviye += 1
+        eser_degeri = max(60, toplam_kaynak_degeri + self.seviye * 20 + maliyet // 2)
+        efsanevi_eser = {'ad': f'Efsanevi Eser {self.seviye}', 'seviye': self.seviye, 'deger': eser_degeri, 'kalite': 'efsanevi', 'kaynaklar': uygun_esyalar}
+        self.envanter.append(efsanevi_eser)
+        return {'oyuncu': self.isim, 'basarili': True, 'uretilen_eser': efsanevi_eser, 'kullanilan_kaynaklar': uygun_esyalar, 'harcanan_altin': maliyet, 'onceki_altin': eski_altin, 'toplam_altin': self.altin, 'kazanilan_xp': kazanilan_xp, 'onceki_xp': eski_xp, 'toplam_xp': self.xp, 'eski_seviye': eski_seviye, 'yeni_seviye': self.seviye, 'seviye_atlama_sayisi': self.seviye - eski_seviye, 'kaynak_degeri': toplam_kaynak_degeri, 'envanter_sayisi': len(self.envanter)}
 if __name__ == '__main__':
     hero = Oyuncu()
     hero.durum_raporu()
