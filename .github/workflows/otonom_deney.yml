@@ -23,11 +23,11 @@ jobs:
     steps:
 
       # --------------------------------------------------
-      # 1. REPO
+      # 1. REPOSITORY
       # --------------------------------------------------
 
       - name: Depoyu Al
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -37,47 +37,47 @@ jobs:
       # --------------------------------------------------
 
       - name: Python Ortamını Kur
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
 
       # --------------------------------------------------
-      # 3. OPENAI
+      # 3. GEREKLİ PAKETLER
       # --------------------------------------------------
 
-      - name: OpenAI SDK Kur
+      - name: Gerekli Python Paketlerini Kur
         run: |
           python -m pip install --upgrade pip
-          python -m pip install openai
+          python -m pip install openai pytest
 
 
       # --------------------------------------------------
-      # 4. MAVİ
+      # 4. MAVİ SİSTEM
       # --------------------------------------------------
 
       - name: Mavi Sistemi Çalıştır
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          OPENAI_MODEL: ${{ vars.OPENAI_MODEL || 'gpt-5.6-luna' }}
+          OPENAI_MODEL: ${{ vars.OPENAI_MODEL }}
         run: |
           python mavi.py
 
 
       # --------------------------------------------------
-      # 5. KIRMIZI
+      # 5. KIRMIZI SİSTEM
       # --------------------------------------------------
 
       - name: Kırmızı Sistemi Çalıştır
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          OPENAI_MODEL: ${{ vars.OPENAI_MODEL || 'gpt-5.6-luna' }}
+          OPENAI_MODEL: ${{ vars.OPENAI_MODEL }}
         run: |
           python kirmizi.py
 
 
       # --------------------------------------------------
-      # 6. SARI TEST
+      # 6. SARI SİSTEM TESTLERİ
       # --------------------------------------------------
 
       - name: Sarı Sistem Testleri
@@ -86,7 +86,7 @@ jobs:
 
 
       # --------------------------------------------------
-      # 7. PAGES VERİSİ
+      # 7. PAGES VERİSİNİ ÜRET
       # --------------------------------------------------
 
       - name: Pages Verisini Üret
@@ -95,7 +95,7 @@ jobs:
 
 
       # --------------------------------------------------
-      # 8. PAGES HAZIRLA
+      # 8. GITHUB PAGES AYARLA
       # --------------------------------------------------
 
       - name: GitHub Pages Ayarla
@@ -103,17 +103,17 @@ jobs:
 
 
       # --------------------------------------------------
-      # 9. DOCS ARTIFACT
+      # 9. PAGES ARTIFACT
       # --------------------------------------------------
 
       - name: Pages Artifact Oluştur
-        uses: actions/upload-pages-artifact@v4
+        uses: actions/upload-pages-artifact@v3
         with:
           path: "./docs"
 
 
       # --------------------------------------------------
-      # 10. GERÇEK PAGES DEPLOY
+      # 10. GITHUB PAGES YAYINLA
       # --------------------------------------------------
 
       - name: GitHub Pages Yayınla
@@ -132,7 +132,7 @@ jobs:
 
 
       # --------------------------------------------------
-      # 12. GİT DEĞİŞİKLİKLERİ
+      # 12. GIT DURUMU
       # --------------------------------------------------
 
       - name: Git Durumunu Göster
@@ -141,7 +141,7 @@ jobs:
 
 
       # --------------------------------------------------
-      # 13. COMMIT
+      # 13. DEĞİŞİKLİKLERİ KAYDET
       # --------------------------------------------------
 
       - name: Değişiklikleri Depoya Kaydet
