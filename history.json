@@ -216,5 +216,11 @@
     "summary": "Seviye artık savaş gücünü artırıyor: her seviye saldırıya +1 temel hasar ekliyor.",
     "reason": "Deterministik kontrol kapılarından biri geçmedi.",
     "status": "REJECTED"
+  },
+  {
+    "generation": 20,
+    "summary": "Seviye atlamak artık saldırı ve savunmayı güçlendiriyor.",
+    "reason": "Deterministik kontrol kapılarından biri geçmedi.",
+    "status": "REJECTED"
   }
 ]
