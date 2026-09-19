@@ -234,5 +234,11 @@
     "summary": "Seviye atlamak artık saldırı gücünü artırıyor.",
     "reason": "Deterministik kontrol kapılarından biri geçmedi.",
     "status": "REJECTED"
+  },
+  {
+    "generation": 20,
+    "summary": "Seviye atlamak artık saldırı gücünü artırıyor.",
+    "reason": "Deterministik kontrol kapılarından biri geçmedi.",
+    "status": "REJECTED"
   }
 ]
