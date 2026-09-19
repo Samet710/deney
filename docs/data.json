@@ -1,226 +1,280 @@
 {
-  "generation": 20,
-  "max_generations": 50,
-  "latest_method": "canavar_avı",
-  "latest_generation": 20,
-  "latest_code": "def canavar_avı(self):\n        if not hasattr(self, 'altin'):\n            self.altin = 0\n        if not hasattr(self, 'canavar_avı_sayisi'):\n            self.canavar_avı_sayisi = 0\n        if not hasattr(self, 'canavar_ünü'):\n            self.canavar_ünü = 0\n        if not hasattr(self, 'yoldas_bonusu'):\n            self.yoldas_bonusu = 0\n\n        av_numarasi = self.canavar_avı_sayisi + 1\n        ekipman_gücü = 0\n        for eşya in self.envanter:\n            if isinstance(eşya, dict):\n                değer = eşya.get('deger', eşya.get('değer', 0))\n                if isinstance(değer, (int, float)) and değer > 0:\n                    ekipman_gücü += int(değer)\n\n        savaş_gücü = (\n            self.seviye * 38\n            + min(ekipman_gücü, self.seviye * 75)\n            + self.yoldas_bonusu\n            + len(self.envanter) * 4\n        )\n        canavar_gücü = self.seviye * 30 + av_numarasi * 8\n\n        eski_seviye = self.seviye\n        eski_xp = self.xp\n        eski_altin = self.altin\n        self.canavar_avı_sayisi = av_numarasi\n\n        if savaş_gücü < canavar_gücü:\n            kaybedilen_xp = min(self.xp, self.seviye * 8)\n            kaybedilen_altin = min(self.altin, self.seviye * 4)\n            self.xp -= kaybedilen_xp\n            self.altin -= kaybedilen_altin\n            return {\n                'oyuncu': self.isim,\n                'basarili': False,\n                'av_numarasi': av_numarasi,\n                'savaş_gücü': savaş_gücü,\n                'canavar_gücü': canavar_gücü,\n                'kaybedilen_xp': kaybedilen_xp,\n                'toplam_xp': self.xp,\n                'kaybedilen_altin': kaybedilen_altin,\n                'toplam_altin': self.altin,\n                'eski_seviye': eski_seviye,\n                'yeni_seviye': self.seviye,\n                'canavar_ünü': self.canavar_ünü,\n                'envanter_sayisi': len(self.envanter)\n            }\n\n        kazanılan_xp = self.seviye * 32 + min(ekipman_gücü, self.seviye * 60) // 2\n        kazanılan_altin = self.seviye * 20 + len(self.envanter) * 7\n        kazanılan_ünü = 6 + self.seviye * 2\n\n        self.xp += kazanılan_xp\n        self.altin += kazanılan_altin\n        self.canavar_ünü += kazanılan_ünü\n\n        while self.xp >= self.seviye * 100:\n            self.seviye += 1\n\n        ganimet = {\n            'ad': f'Canavar Avı Ganimeti {av_numarasi}',\n            'seviye': self.seviye,\n            'deger': max(20, kazanılan_altin // 2 + self.seviye * 3),\n            'av_numarasi': av_numarasi,\n            'canavar_ünü': kazanılan_ünü\n        }\n        self.envanter.append(ganimet)\n\n        return {\n            'oyuncu': self.isim,\n            'basarili': True,\n            'av_numarasi': av_numarasi,\n            'savaş_gücü': savaş_gücü,\n            'canavar_gücü': canavar_gücü,\n            'kazanılan_xp': kazanılan_xp,\n            'toplam_xp': self.xp,\n            'kazanılan_altin': kazanılan_altin,\n            'toplam_altin': self.altin,\n            'kazanılan_ünü': kazanılan_ünü,\n            'canavar_ünü': self.canavar_ünü,\n            'eski_seviye': eski_seviye,\n            'yeni_seviye': self.seviye,\n            'seviye_atlama_sayisi': self.seviye - eski_seviye,\n            'ganimet': ganimet,\n            'envanter_sayisi': len(self.envanter),\n            'onceki_xp': eski_xp,\n            'onceki_altin': eski_altin\n        }",
-  "line_count": 499,
-  "updated_at": "2026-09-19 06:30:27 UTC",
-  "experiment_status": "🟢 KABUL: Geliştirme başarılı",
-  "baseline_score": 91.06,
-  "candidate_score": 97.56,
-  "score_difference": 6.5,
-  "history_count": 15,
-  "recent_history": [
-    {
-      "time": "2026-09-17 21:40:09 UTC",
-      "attempt": 6,
-      "generation": 11,
-      "previous_generation": 10,
-      "method": "boss_savasi",
-      "result": "accepted",
-      "reason": "Aday testleri geçti ve yeni özellik minimum kalite eşiğini geçti.",
-      "baseline_score": 95.02,
-      "candidate_score": 101.52,
-      "score_difference": 6.5,
-      "method_quality": 65,
-      "code": "def boss_savasi(self):\n    if not hasattr(self, 'altin'):\n        self.altin = 0\n    if not hasattr(self, 'boss_savasi_sayisi'):\n        self.boss_savasi_sayisi = 0\n\n    self.boss_savasi_sayisi += 1\n    savas_no = self.boss_savasi_sayisi\n    eski_seviye = self.seviye\n    eski_xp = self.xp\n    eski_altin = self.altin\n\n    ekipman_gucu = 0\n    for esya in self.envanter:\n        if isinstance(esya, dict):\n            deger = esya.get('deger', esya.get('değer', 0))\n            if isinstance(deger, (int, float)) and deger > 0:\n                ekipman_gucu += int(deger)\n\n    oyuncu_gucu = self.seviye * 30 + ekipman_gucu + len(self.envanter) * 5\n    boss_gucu = self.seviye * 25 + savas_no * 8\n    basarili = oyuncu_gucu >= boss_gucu\n\n    if basarili:\n        kazanilan_xp = self.seviye * 35 + ekipman_gucu // 2\n        kazanilan_altin = self.seviye * 20 + len(self.envanter) * 7\n        self.xp += kazanilan_xp\n        self.altin += kazanilan_altin\n\n        while self.xp >= self.seviye * 100:\n            self.seviye += 1\n\n        ganimet = {\n            'ad': f'Boss Ganimeti {savas_no}',\n            'seviye': self.seviye,\n            'deger': max(20, kazanilan_altin // 2)\n        }\n        self.envanter.append(ganimet)\n\n        return {\n            'oyuncu': self.isim,\n            'basarili': True,\n            'savas_numarasi': savas_no,\n            'oyuncu_gucu': oyuncu_gucu,\n            'boss_gucu': boss_gucu,\n            'kazanilan_xp': kazanilan_xp,\n            'toplam_xp': self.xp,\n            'kazanilan_altin': kazanilan_altin,\n            'toplam_altin': self.altin,\n            'eski_seviye': eski_seviye,\n            'yeni_seviye': self.seviye,\n            'seviye_atlama_sayisi': self.seviye - eski_seviye,\n            'ganimet': ganimet,\n            'envanter_sayisi': len(self.envanter)\n        }\n\n    kaybedilen_xp = min(self.xp, self.seviye * 10)\n    self.xp -= kaybedilen_xp\n    ceza_altini = min(self.altin, self.seviye * 5)\n    self.altin -= ceza_altini\n\n    return {\n        'oyuncu': self.isim,\n        'basarili': False,\n        'savas_numarasi': savas_no,\n        'oyuncu_gucu': oyuncu_gucu,\n        'boss_gucu': boss_gucu,\n        'kaybedilen_xp': kaybedilen_xp,\n        'toplam_xp': self.xp,\n        'kaybedilen_altin': ceza_altini,\n        'toplam_altin': self.altin,\n        'eski_seviye': eski_seviye,\n        'yeni_seviye': self.seviye,\n        'envanter_sayisi': len(self.envanter)\n    }"
-    },
-    {
-      "time": "2026-09-18 00:04:16 UTC",
-      "attempt": 7,
-      "generation": 12,
-      "previous_generation": 11,
-      "method": "ekipman_buyule",
-      "result": "accepted",
-      "reason": "Aday testleri geçti ve yeni özellik minimum kalite eşiğini geçti.",
-      "baseline_score": 94.27,
-      "candidate_score": 100.77,
-      "score_difference": 6.5,
-      "method_quality": 65,
-      "code": "def ekipman_buyule(self):\n        if not hasattr(self, 'altin'):\n            self.altin = 0\n\n        hedef_esya = None\n        hedef_index = -1\n        for index, esya in enumerate(self.envanter):\n            if isinstance(esya, dict):\n                hedef_esya = esya\n                hedef_index = index\n                break\n\n        if hedef_esya is None:\n            return {\n                'oyuncu': self.isim,\n                'basarili': False,\n                'neden': 'Büyülenecek uygun bir ekipman bulunmuyor.',\n                'toplam_altin': self.altin,\n                'envanter_sayisi': len(self.envanter)\n            }\n\n        mevcut_deger = hedef_esya.get('deger', hedef_esya.get('değer', 0))\n        if not isinstance(mevcut_deger, (int, float)) or mevcut_deger < 0:\n            mevcut_deger = 0\n\n        buyu_sayisi = hedef_esya.get('buyu_sayisi', 0)\n        if not isinstance(buyu_sayisi, int) or buyu_sayisi < 0:\n            buyu_sayisi = 0\n\n        maliyet = self.seviye * 12 + int(mevcut_deger * 0.25) + buyu_sayisi * 10\n        maliyet = max(15, maliyet)\n\n        if self.altin < maliyet:\n            return {\n                'oyuncu': self.isim,\n                'basarili': False,\n                'neden': 'Büyüleme için yeterli altın bulunmuyor.',\n                'gereken_altin': maliyet,\n                'toplam_altin': self.altin,\n                'eksik_altin': maliyet - self.altin,\n                'esya': hedef_esya,\n                'envanter_sayisi': len(self.envanter)\n            }\n\n        eski_seviye = self.seviye\n        eski_altin = self.altin\n        eski_deger = mevcut_deger\n        deger_artisi = max(10, self.seviye * 8 + buyu_sayisi * 4)\n        kazanilan_xp = self.seviye * 10 + deger_artisi // 2\n\n        self.altin -= maliyet\n        self.xp += kazanilan_xp\n        hedef_esya['deger'] = int(eski_deger + deger_artisi)\n        hedef_esya['buyu_sayisi'] = buyu_sayisi + 1\n        hedef_esya['buyulu'] = True\n        hedef_esya['buyu_adi'] = f'Kademe {buyu_sayisi + 1} Büyüsü'\n\n        while self.xp >= self.seviye * 100:\n            self.seviye += 1\n\n        return {\n            'oyuncu': self.isim,\n            'basarili': True,\n            'esya_indexi': hedef_index,\n            'buyulenen_esya': hedef_esya,\n            'harcanan_altin': maliyet,\n            'onceki_altin': eski_altin,\n            'toplam_altin': self.altin,\n            'deger_artisi': deger_artisi,\n            'eski_deger': eski_deger,\n            'yeni_deger': hedef_esya['deger'],\n            'kazanilan_xp': kazanilan_xp,\n            'toplam_xp': self.xp,\n            'eski_seviye': eski_seviye,\n            'yeni_seviye': self.seviye,\n            'seviye_atlama_sayisi': self.seviye - eski_seviye,\n            'envanter_sayisi': len(self.envanter)\n        }"
-    },
-    {
-      "time": "2026-09-18 04:32:17 UTC",
-      "attempt": 8,
-      "generation": 13,
-      "previous_generation": 12,
-      "method": "gizli_gecit_kesfi",
-      "result": "accepted",
-      "reason": "Aday testleri geçti ve yeni özellik minimum kalite eşiğini geçti.",
-      "baseline_score": 93.63,
-      "candidate_score": 100.13,
-      "score_difference": 6.5,
-      "method_quality": 65,
-      "code": "def gizli_gecit_kesfi(self):\n        if not hasattr(self, 'altin'):\n            self.altin = 0\n        if not hasattr(self, 'gecit_kesfi_sayisi'):\n            self.gecit_kesfi_sayisi = 0\n\n        if not self.envanter:\n            return {\n                'oyuncu': self.isim,\n                'basarili': False,\n                'neden': 'Gizli geçidi açmak için en az bir eşya gerekli.',\n                'toplam_altin': self.altin,\n                'envanter_sayisi': 0\n            }\n\n        deneme_no = self.gecit_kesfi_sayisi + 1\n        anahtar_esya = self.envanter[0]\n        anahtar_degeri = 0\n\n        if isinstance(anahtar_esya, dict):\n            anahtar_degeri = anahtar_esya.get('deger', anahtar_esya.get('değer', 0))\n            if not isinstance(anahtar_degeri, (int, float)) or anahtar_degeri < 0:\n                anahtar_degeri = 0\n\n        diger_esya_gucu = 0\n        for esya in self.envanter[1:]:\n            if isinstance(esya, dict):\n                deger = esya.get('deger', esya.get('değer', 0))\n                if isinstance(deger, (int, float)) and deger > 0:\n                    diger_esya_gucu += int(deger)\n\n        kesif_gucu = self.seviye * 35 + int(anahtar_degeri) + min(diger_esya_gucu, self.seviye * 30)\n        gecit_zorlugu = self.seviye * 30 + deneme_no * 12\n        basarili = kesif_gucu >= gecit_zorlugu\n        eski_seviye = self.seviye\n        eski_xp = self.xp\n        eski_altin = self.altin\n\n        self.gecit_kesfi_sayisi = deneme_no\n\n        if not basarili:\n            kaybedilen_xp = min(self.xp, self.seviye * 8)\n            kaybedilen_altin = min(self.altin, self.seviye * 6)\n            self.xp -= kaybedilen_xp\n            self.altin -= kaybedilen_altin\n            return {\n                'oyuncu': self.isim,\n                'basarili': False,\n                'kesif_numarasi': deneme_no,\n                'kesif_gucu': kesif_gucu,\n                'gecit_zorlugu': gecit_zorlugu,\n                'kaybedilen_xp': kaybedilen_xp,\n                'toplam_xp': self.xp,\n                'kaybedilen_altin': kaybedilen_altin,\n                'toplam_altin': self.altin,\n                'eski_seviye': eski_seviye,\n                'yeni_seviye': self.seviye,\n                'kullanilan_esya': anahtar_esya,\n                'envanter_sayisi': len(self.envanter)\n            }\n\n        kullanilan_esya = self.envanter.pop(0)\n        kazanilan_xp = self.seviye * 30 + int(anahtar_degeri) // 2\n        kazanilan_altin = self.seviye * 25 + int(anahtar_degeri) // 3\n        self.xp += kazanilan_xp\n        self.altin += kazanilan_altin\n\n        while self.xp >= self.seviye * 100:\n            self.seviye += 1\n\n        bulunan_eser = {\n            'ad': f'Gizli Geçit Eseri {deneme_no}',\n            'seviye': self.seviye,\n            'deger': max(25, kazanilan_altin + self.seviye * 5),\n            'kaynak_esya': kullanilan_esya\n        }\n        self.envanter.append(bulunan_eser)\n\n        return {\n            'oyuncu': self.isim,\n            'basarili': True,\n            'kesif_numarasi': deneme_no,\n            'kesif_gucu': kesif_gucu,\n            'gecit_zorlugu': gecit_zorlugu,\n            'kullanilan_esya': kullanilan_esya,\n            'bulunan_eser': bulunan_eser,\n            'kazanilan_xp': kazanilan_xp,\n            'toplam_xp': self.xp,\n            'kazanilan_altin': kazanilan_altin,\n            'toplam_altin': self.altin,\n            'eski_seviye': eski_seviye,\n            'yeni_seviye': self.seviye,\n            'seviye_atlama_sayisi': self.seviye - eski_seviye,\n            'envanter_sayisi': len(self.envanter)\n        }"
-    },
-    {
-      "time": "2026-09-18 09:09:21 UTC",
-      "attempt": 9,
-      "generation": 14,
-      "previous_generation": 13,
-      "method": "lonca_gorevi",
-      "result": "accepted",
-      "reason": "Aday testleri geçti ve yeni özellik minimum kalite eşiğini geçti.",
-      "baseline_score": 93.09,
-      "candidate_score": 99.59,
-      "score_difference": 6.5,
-      "method_quality": 65,
-      "code": "def lonca_gorevi(self):\n        if not hasattr(self, 'altin'):\n            self.altin = 0\n        if not hasattr(self, 'lonca_gorevi_sayisi'):\n            self.lonca_gorevi_sayisi = 0\n        if not hasattr(self, 'lonca_itibari'):\n            self.lonca_itibari = 0\n\n        gorev_numarasi = self.lonca_gorevi_sayisi + 1\n        ekipman_degeri = 0\n\n        for esya in self.envanter:\n            if isinstance(esya, dict):\n                deger = esya.get('deger', esya.get('değer', 0))\n                if isinstance(deger, (int, float)) and deger > 0:\n                    ekipman_degeri += int(deger)\n\n        oyuncu_gucu = self.seviye * 35 + min(ekipman_degeri, self.seviye * 50) + len(self.envanter) * 4\n        gorev_zorlugu = self.seviye * 28 + gorev_numarasi * 7\n        eski_seviye = self.seviye\n        eski_xp = self.xp\n        eski_altin = self.altin\n        self.lonca_gorevi_sayisi = gorev_numarasi\n\n        if oyuncu_gucu < gorev_zorlugu:\n            kaybedilen_xp = min(self.xp, self.seviye * 6)\n            kaybedilen_altin = min(self.altin, self.seviye * 4)\n            self.xp -= kaybedilen_xp\n            self.altin -= kaybedilen_altin\n            return {\n                'oyuncu': self.isim,\n                'basarili': False,\n                'gorev_numarasi': gorev_numarasi,\n                'oyuncu_gucu': oyuncu_gucu,\n                'gorev_zorlugu': gorev_zorlugu,\n                'kaybedilen_xp': kaybedilen_xp,\n                'toplam_xp': self.xp,\n                'kaybedilen_altin': kaybedilen_altin,\n                'toplam_altin': self.altin,\n                'eski_seviye': eski_seviye,\n                'yeni_seviye': self.seviye,\n                'lonca_itibari': self.lonca_itibari,\n                'envanter_sayisi': len(self.envanter)\n            }\n\n        kazanilan_xp = self.seviye * 22 + min(ekipman_degeri, self.seviye * 30) // 2\n        kazanilan_altin = self.seviye * 16 + len(self.envanter) * 6\n        kazanilan_itibar = 10 + self.seviye * 3\n        self.xp += kazanilan_xp\n        self.altin += kazanilan_altin\n        self.lonca_itibari += kazanilan_itibar\n\n        while self.xp >= self.seviye * 100:\n            self.seviye += 1\n\n        odul = {\n            'ad': f'Lonca Ödülü {gorev_numarasi}',\n            'seviye': self.seviye,\n            'deger': max(15, kazanilan_altin // 2),\n            'itibar': kazanilan_itibar\n        }\n        self.envanter.append(odul)\n\n        return {\n            'oyuncu': self.isim,\n            'basarili': True,\n            'gorev_numarasi': gorev_numarasi,\n            'oyuncu_gucu': oyuncu_gucu,\n            'gorev_zorlugu': gorev_zorlugu,\n            'kazanilan_xp': kazanilan_xp,\n            'toplam_xp': self.xp,\n            'kazanilan_altin': kazanilan_altin,\n            'toplam_altin': self.altin,\n            'kazanilan_itibar': kazanilan_itibar,\n            'lonca_itibari': self.lonca_itibari,\n            'eski_seviye': eski_seviye,\n            'yeni_seviye': self.seviye,\n            'seviye_atlama_sayisi': self.seviye - eski_seviye,\n            'odul': odul,\n            'envanter_sayisi': len(self.envanter),\n            'onceki_xp': eski_xp,\n            'onceki_altin': eski_altin\n        }"
-    },
-    {
-      "time": "2026-09-18 13:46:12 UTC",
-      "attempt": 10,
-      "generation": 15,
-      "previous_generation": 14,
-      "method": "hazine_avi",
-      "result": "accepted",
-      "reason": "Aday testleri geçti ve yeni özellik minimum kalite eşiğini geçti.",
-      "baseline_score": 92.61,
-      "candidate_score": 99.11,
-      "score_difference": 6.5,
-      "method_quality": 65,
-      "code": "def hazine_avi(self):\n    if not hasattr(self, 'altin'):\n        self.altin = 0\n    if not hasattr(self, 'hazine_avi_sayisi'):\n        self.hazine_avi_sayisi = 0\n\n    av_numarasi = self.hazine_avi_sayisi + 1\n    ekipman_degeri = 0\n\n    for esya in self.envanter:\n        if isinstance(esya, dict):\n            deger = esya.get('deger', esya.get('değer', 0))\n            if isinstance(deger, (int, float)) and deger > 0:\n                ekipman_degeri += int(deger)\n\n    kesif_gucu = self.seviye * 40 + min(ekipman_degeri, self.seviye * 60) + len(self.envanter) * 6\n    hazine_zorlugu = self.seviye * 32 + av_numarasi * 9\n    eski_seviye = self.seviye\n    eski_xp = self.xp\n    eski_altin = self.altin\n    self.hazine_avi_sayisi = av_numarasi\n\n    if kesif_gucu < hazine_zorlugu:\n        kaybedilen_xp = min(self.xp, self.seviye * 5)\n        self.xp -= kaybedilen_xp\n        return {\n            'oyuncu': self.isim,\n            'basarili': False,\n            'av_numarasi': av_numarasi,\n            'kesif_gucu': kesif_gucu,\n            'hazine_zorlugu': hazine_zorlugu,\n            'kaybedilen_xp': kaybedilen_xp,\n            'toplam_xp': self.xp,\n            'toplam_altin': self.altin,\n            'eski_seviye': eski_seviye,\n            'yeni_seviye': self.seviye,\n            'envanter_sayisi': len(self.envanter)\n        }\n\n    kazanilan_xp = self.seviye * 28 + min(ekipman_degeri, self.seviye * 50) // 2\n    kazanilan_altin = self.seviye * 22 + len(self.envanter) * 8\n    self.xp += kazanilan_xp\n    self.altin += kazanilan_altin\n\n    while self.xp >= self.seviye * 100:\n        self.seviye += 1\n\n    hazine = {\n        'ad': f'Kadim Hazine {av_numarasi}',\n        'seviye': self.seviye,\n        'deger': max(25, kazanilan_altin // 2 + self.seviye * 5),\n        'av_numarasi': av_numarasi\n    }\n    self.envanter.append(hazine)\n\n    return {\n        'oyuncu': self.isim,\n        'basarili': True,\n        'av_numarasi': av_numarasi,\n        'kesif_gucu': kesif_gucu,\n        'hazine_zorlugu': hazine_zorlugu,\n        'kazanilan_xp': kazanilan_xp,\n        'toplam_xp': self.xp,\n        'kazanilan_altin': kazanilan_altin,\n        'toplam_altin': self.altin,\n        'eski_seviye': eski_seviye,\n        'yeni_seviye': self.seviye,\n        'seviye_atlama_sayisi': self.seviye - eski_seviye,\n        'hazine': hazine,\n        'envanter_sayisi': len(self.envanter),\n        'onceki_xp': eski_xp,\n        'onceki_altin': eski_altin\n    }"
-    },
-    {
-      "time": "2026-09-18 17:38:22 UTC",
-      "attempt": 11,
-      "generation": 16,
-      "previous_generation": 15,
-      "method": "kale_savunmasi",
-      "result": "accepted",
-      "reason": "Aday testleri geçti ve yeni özellik minimum kalite eşiğini geçti.",
-      "baseline_score": 92.2,
-      "candidate_score": 98.7,
-      "score_difference": 6.5,
-      "method_quality": 65,
-      "code": "def kale_savunmasi(self):\n    if not hasattr(self, 'altin'):\n        self.altin = 0\n    if not hasattr(self, 'kale_savunmasi_sayisi'):\n        self.kale_savunmasi_sayisi = 0\n    if not hasattr(self, 'savunma_itibari'):\n        self.savunma_itibari = 0\n\n    dalga_numarasi = self.kale_savunmasi_sayisi + 1\n    ekipman_gucu = 0\n\n    for esya in self.envanter:\n        if isinstance(esya, dict):\n            deger = esya.get('deger', esya.get('değer', 0))\n            if isinstance(deger, (int, float)) and deger > 0:\n                ekipman_gucu += int(deger)\n\n    savunma_gucu = (\n        self.seviye * 40\n        + min(ekipman_gucu, self.seviye * 70)\n        + len(self.envanter) * 5\n    )\n    isgal_zorlugu = self.seviye * 35 + dalga_numarasi * 10\n    eski_seviye = self.seviye\n    eski_xp = self.xp\n    eski_altin = self.altin\n\n    self.kale_savunmasi_sayisi = dalga_numarasi\n\n    if savunma_gucu < isgal_zorlugu:\n        kaybedilen_xp = min(self.xp, self.seviye * 7)\n        kaybedilen_altin = min(self.altin, self.seviye * 5)\n        self.xp -= kaybedilen_xp\n        self.altin -= kaybedilen_altin\n\n        return {\n            'oyuncu': self.isim,\n            'basarili': False,\n            'dalga_numarasi': dalga_numarasi,\n            'savunma_gucu': savunma_gucu,\n            'isgal_zorlugu': isgal_zorlugu,\n            'kaybedilen_xp': kaybedilen_xp,\n            'toplam_xp': self.xp,\n            'kaybedilen_altin': kaybedilen_altin,\n            'toplam_altin': self.altin,\n            'eski_seviye': eski_seviye,\n            'yeni_seviye': self.seviye,\n            'savunma_itibari': self.savunma_itibari,\n            'envanter_sayisi': len(self.envanter)\n        }\n\n    kazanilan_xp = self.seviye * 30 + min(ekipman_gucu, self.seviye * 50) // 2\n    kazanilan_altin = self.seviye * 18 + len(self.envanter) * 6\n    kazanilan_itibar = 8 + self.seviye * 2\n\n    self.xp += kazanilan_xp\n    self.altin += kazanilan_altin\n    self.savunma_itibari += kazanilan_itibar\n\n    while self.xp >= self.seviye * 100:\n        self.seviye += 1\n\n    tahkimat = {\n        'ad': f'Kale Savunma Nişanı {dalga_numarasi}',\n        'seviye': self.seviye,\n        'deger': max(20, kazanilan_altin // 2),\n        'itibar': kazanilan_itibar,\n        'dalga': dalga_numarasi\n    }\n    self.envanter.append(tahkimat)\n\n    return {\n        'oyuncu': self.isim,\n        'basarili': True,\n        'dalga_numarasi': dalga_numarasi,\n        'savunma_gucu': savunma_gucu,\n        'isgal_zorlugu': isgal_zorlugu,\n        'kazanilan_xp': kazanilan_xp,\n        'toplam_xp': self.xp,\n        'kazanilan_altin': kazanilan_altin,\n        'toplam_altin': self.altin,\n        'kazanilan_itibar': kazanilan_itibar,\n        'savunma_itibari': self.savunma_itibari,\n        'eski_seviye': eski_seviye,\n        'yeni_seviye': self.seviye,\n        'seviye_atlama_sayisi': self.seviye - eski_seviye,\n        'tahkimat': tahkimat,\n        'envanter_sayisi': len(self.envanter),\n        'onceki_xp': eski_xp,\n        'onceki_altin': eski_altin\n    }"
-    },
-    {
-      "time": "2026-09-18 20:49:28 UTC",
-      "attempt": 12,
-      "generation": 17,
-      "previous_generation": 16,
-      "method": "yetenek_ustaligi",
-      "result": "accepted",
-      "reason": "Aday testleri geçti ve yeni özellik minimum kalite eşiğini geçti.",
-      "baseline_score": 91.84,
-      "candidate_score": 98.34,
-      "score_difference": 6.5,
-      "method_quality": 65,
-      "code": "def yetenek_ustaligi(self):\n    if not hasattr(self, 'altin'):\n        self.altin = 0\n    if not hasattr(self, 'yetenek_ustaligi_sayisi'):\n        self.yetenek_ustaligi_sayisi = 0\n    if not hasattr(self, 'yetenek_puanlari'):\n        self.yetenek_puanlari = 0\n    if not hasattr(self, 'yetenekler'):\n        self.yetenekler = []\n\n    mevcut_ustalik = self.yetenek_ustaligi_sayisi\n    maliyet = self.seviye * 20 + mevcut_ustalik * 15\n\n    if self.altin < maliyet:\n        return {\n            'oyuncu': self.isim,\n            'basarili': False,\n            'neden': 'Yetenek eğitimi için yeterli altın bulunmuyor.',\n            'gereken_altin': maliyet,\n            'toplam_altin': self.altin,\n            'eksik_altin': maliyet - self.altin,\n            'ustalik_seviyesi': mevcut_ustalik,\n            'yetenek_sayisi': len(self.yetenekler)\n        }\n\n    eski_seviye = self.seviye\n    eski_xp = self.xp\n    eski_altin = self.altin\n\n    self.altin -= maliyet\n    self.yetenek_ustaligi_sayisi += 1\n\n    kazanilan_xp = self.seviye * 18 + mevcut_ustalik * 10\n    kazanilan_puan = 1 + self.seviye // 5\n\n    self.xp += kazanilan_xp\n    self.yetenek_puanlari += kazanilan_puan\n\n    while self.xp >= self.seviye * 100:\n        self.seviye += 1\n\n    yetenek_adlari = [\n        'Çelik İrade',\n        'Hızlı Refleks',\n        'Kritik Darbe',\n        'Savaş Sezgisi',\n        'Efsanevi Dayanıklılık'\n    ]\n    yetenek_adi = yetenek_adlari[mevcut_ustalik % len(yetenek_adlari)]\n\n    yetenek = {\n        'ad': yetenek_adi,\n        'kademe': mevcut_ustalik + 1,\n        'puan': kazanilan_puan,\n        'acilma_seviyesi': self.seviye\n    }\n    self.yetenekler.append(yetenek)\n\n    return {\n        'oyuncu': self.isim,\n        'basarili': True,\n        'egitim_numarasi': self.yetenek_ustaligi_sayisi,\n        'egitilen_yetenek': yetenek,\n        'harcanan_altin': maliyet,\n        'onceki_altin': eski_altin,\n        'toplam_altin': self.altin,\n        'kazanilan_xp': kazanilan_xp,\n        'onceki_xp': eski_xp,\n        'toplam_xp': self.xp,\n        'kazanilan_yetenek_puani': kazanilan_puan,\n        'toplam_yetenek_puani': self.yetenek_puanlari,\n        'eski_seviye': eski_seviye,\n        'yeni_seviye': self.seviye,\n        'seviye_atlama_sayisi': self.seviye - eski_seviye,\n        'ustalik_seviyesi': self.yetenek_ustaligi_sayisi,\n        'yetenek_sayisi': len(self.yetenekler)\n    }"
-    },
-    {
-      "time": "2026-09-18 23:12:08 UTC",
-      "attempt": 13,
-      "generation": 18,
-      "previous_generation": 17,
-      "method": "yoldas_egitimi",
-      "result": "accepted",
-      "reason": "Aday testleri geçti ve yeni özellik minimum kalite eşiğini geçti.",
-      "baseline_score": 91.62,
-      "candidate_score": 98.12,
-      "score_difference": 6.5,
-      "method_quality": 65,
-      "code": "def yoldas_egitimi(self):\n    if not hasattr(self, 'altin'):\n        self.altin = 0\n    if not hasattr(self, 'yoldaslar'):\n        self.yoldaslar = []\n    if not hasattr(self, 'yoldas_egitim_sayisi'):\n        self.yoldas_egitim_sayisi = 0\n    if not hasattr(self, 'yoldas_bonusu'):\n        self.yoldas_bonusu = 0\n\n    egitim_numarasi = self.yoldas_egitim_sayisi + 1\n    maliyet = self.seviye * 18 + len(self.yoldaslar) * 25\n\n    if self.altin < maliyet:\n        return {\n            'oyuncu': self.isim,\n            'basarili': False,\n            'neden': 'Yoldaş eğitimi için yeterli altın bulunmuyor.',\n            'gereken_altin': maliyet,\n            'toplam_altin': self.altin,\n            'eksik_altin': maliyet - self.altin,\n            'yoldas_sayisi': len(self.yoldaslar),\n            'yoldas_bonusu': self.yoldas_bonusu\n        }\n\n    eski_seviye = self.seviye\n    eski_xp = self.xp\n    eski_altin = self.altin\n    eski_bonus = self.yoldas_bonusu\n\n    yoldas_adlari = ['Kurt Yoldaşı', 'Kartal Gözcüsü', 'Çelik Golem', 'Gölge Tilki']\n    yoldas_adi = yoldas_adlari[len(self.yoldaslar) % len(yoldas_adlari)]\n    yoldas_kademesi = len(self.yoldaslar) + 1\n    bonus = self.seviye * 6 + yoldas_kademesi * 4\n    kazanilan_xp = self.seviye * 14 + yoldas_kademesi * 8\n\n    self.altin -= maliyet\n    self.xp += kazanilan_xp\n    self.yoldas_egitim_sayisi = egitim_numarasi\n    self.yoldas_bonusu += bonus\n\n    while self.xp >= self.seviye * 100:\n        self.seviye += 1\n\n    yoldas = {\n        'ad': yoldas_adi,\n        'kademe': yoldas_kademesi,\n        'savas_bonusu': bonus,\n        'egitim_seviyesi': self.seviye\n    }\n    self.yoldaslar.append(yoldas)\n\n    return {\n        'oyuncu': self.isim,\n        'basarili': True,\n        'egitim_numarasi': egitim_numarasi,\n        'egitilen_yoldas': yoldas,\n        'harcanan_altin': maliyet,\n        'onceki_altin': eski_altin,\n        'toplam_altin': self.altin,\n        'kazanilan_xp': kazanilan_xp,\n        'onceki_xp': eski_xp,\n        'toplam_xp': self.xp,\n        'eski_seviye': eski_seviye,\n        'yeni_seviye': self.seviye,\n        'seviye_atlama_sayisi': self.seviye - eski_seviye,\n        'bonus_artisi': bonus,\n        'onceki_yoldas_bonusu': eski_bonus,\n        'yoldas_bonusu': self.yoldas_bonusu,\n        'yoldas_sayisi': len(self.yoldaslar)\n    }"
-    },
-    {
-      "time": "2026-09-19 01:29:53 UTC",
-      "attempt": 14,
-      "generation": 19,
-      "previous_generation": 18,
-      "method": "efsanevi_eser_uretimi",
-      "result": "accepted",
-      "reason": "Aday testleri geçti ve yeni özellik minimum kalite eşiğini geçti.",
-      "baseline_score": 91.33,
-      "candidate_score": 97.83,
-      "score_difference": 6.5,
-      "method_quality": 65,
-      "code": "def efsanevi_eser_uretimi(self):\n        if not hasattr(self, 'altin'):\n            self.altin = 0\n\n        uygun_esyalar = []\n        uygun_indeksler = []\n\n        for indeks, esya in enumerate(self.envanter):\n            if isinstance(esya, dict):\n                deger = esya.get('deger', esya.get('değer', 0))\n                if not isinstance(deger, (int, float)) or deger < 0:\n                    deger = 0\n                uygun_esyalar.append(esya)\n                uygun_indeksler.append(indeks)\n                if len(uygun_esyalar) == 3:\n                    break\n\n        if len(uygun_esyalar) < 3:\n            return {\n                'oyuncu': self.isim,\n                'basarili': False,\n                'neden': 'Efsanevi eser üretmek için en az üç uygun eşya gerekli.',\n                'toplam_altin': self.altin,\n                'envanter_sayisi': len(self.envanter)\n            }\n\n        toplam_kaynak_degeri = 0\n        for esya in uygun_esyalar:\n            deger = esya.get('deger', esya.get('değer', 0))\n            if not isinstance(deger, (int, float)) or deger < 0:\n                deger = 0\n            toplam_kaynak_degeri += int(deger)\n\n        maliyet = max(30, self.seviye * 25 + toplam_kaynak_degeri // 2)\n\n        if self.altin < maliyet:\n            return {\n                'oyuncu': self.isim,\n                'basarili': False,\n                'neden': 'Efsanevi eser üretimi için yeterli altın bulunmuyor.',\n                'gereken_altin': maliyet,\n                'toplam_altin': self.altin,\n                'eksik_altin': maliyet - self.altin,\n                'kaynak_degeri': toplam_kaynak_degeri,\n                'envanter_sayisi': len(self.envanter)\n            }\n\n        eski_seviye = self.seviye\n        eski_xp = self.xp\n        eski_altin = self.altin\n\n        for indeks in reversed(uygun_indeksler):\n            self.envanter.pop(indeks)\n\n        self.altin -= maliyet\n        kazanilan_xp = self.seviye * 30 + toplam_kaynak_degeri // 3\n        self.xp += kazanilan_xp\n\n        while self.xp >= self.seviye * 100:\n            self.seviye += 1\n\n        eser_degeri = max(\n            60,\n            toplam_kaynak_degeri + self.seviye * 20 + maliyet // 2\n        )\n\n        efsanevi_eser = {\n            'ad': f'Efsanevi Eser {self.seviye}',\n            'seviye': self.seviye,\n            'deger': eser_degeri,\n            'kalite': 'efsanevi',\n            'kaynaklar': uygun_esyalar\n        }\n        self.envanter.append(efsanevi_eser)\n\n        return {\n            'oyuncu': self.isim,\n            'basarili': True,\n            'uretilen_eser': efsanevi_eser,\n            'kullanilan_kaynaklar': uygun_esyalar,\n            'harcanan_altin': maliyet,\n            'onceki_altin': eski_altin,\n            'toplam_altin': self.altin,\n            'kazanilan_xp': kazanilan_xp,\n            'onceki_xp': eski_xp,\n            'toplam_xp': self.xp,\n            'eski_seviye': eski_seviye,\n            'yeni_seviye': self.seviye,\n            'seviye_atlama_sayisi': self.seviye - eski_seviye,\n            'kaynak_degeri': toplam_kaynak_degeri,\n            'envanter_sayisi': len(self.envanter)\n        }"
-    },
-    {
-      "time": "2026-09-19 06:30:27 UTC",
-      "attempt": 15,
+  "system": {
+    "title": "YELLOW // MICRO DUNGEON",
+    "generation": 20,
+    "status": "LIVE",
+    "rules_version": 1,
+    "last_event": {
       "generation": 20,
-      "previous_generation": 19,
-      "method": "canavar_avı",
-      "result": "accepted",
-      "reason": "Aday testleri geçti ve yeni özellik minimum kalite eşiğini geçti.",
-      "baseline_score": 91.06,
-      "candidate_score": 97.56,
-      "score_difference": 6.5,
-      "method_quality": 65,
-      "code": "def canavar_avı(self):\n        if not hasattr(self, 'altin'):\n            self.altin = 0\n        if not hasattr(self, 'canavar_avı_sayisi'):\n            self.canavar_avı_sayisi = 0\n        if not hasattr(self, 'canavar_ünü'):\n            self.canavar_ünü = 0\n        if not hasattr(self, 'yoldas_bonusu'):\n            self.yoldas_bonusu = 0\n\n        av_numarasi = self.canavar_avı_sayisi + 1\n        ekipman_gücü = 0\n        for eşya in self.envanter:\n            if isinstance(eşya, dict):\n                değer = eşya.get('deger', eşya.get('değer', 0))\n                if isinstance(değer, (int, float)) and değer > 0:\n                    ekipman_gücü += int(değer)\n\n        savaş_gücü = (\n            self.seviye * 38\n            + min(ekipman_gücü, self.seviye * 75)\n            + self.yoldas_bonusu\n            + len(self.envanter) * 4\n        )\n        canavar_gücü = self.seviye * 30 + av_numarasi * 8\n\n        eski_seviye = self.seviye\n        eski_xp = self.xp\n        eski_altin = self.altin\n        self.canavar_avı_sayisi = av_numarasi\n\n        if savaş_gücü < canavar_gücü:\n            kaybedilen_xp = min(self.xp, self.seviye * 8)\n            kaybedilen_altin = min(self.altin, self.seviye * 4)\n            self.xp -= kaybedilen_xp\n            self.altin -= kaybedilen_altin\n            return {\n                'oyuncu': self.isim,\n                'basarili': False,\n                'av_numarasi': av_numarasi,\n                'savaş_gücü': savaş_gücü,\n                'canavar_gücü': canavar_gücü,\n                'kaybedilen_xp': kaybedilen_xp,\n                'toplam_xp': self.xp,\n                'kaybedilen_altin': kaybedilen_altin,\n                'toplam_altin': self.altin,\n                'eski_seviye': eski_seviye,\n                'yeni_seviye': self.seviye,\n                'canavar_ünü': self.canavar_ünü,\n                'envanter_sayisi': len(self.envanter)\n            }\n\n        kazanılan_xp = self.seviye * 32 + min(ekipman_gücü, self.seviye * 60) // 2\n        kazanılan_altin = self.seviye * 20 + len(self.envanter) * 7\n        kazanılan_ünü = 6 + self.seviye * 2\n\n        self.xp += kazanılan_xp\n        self.altin += kazanılan_altin\n        self.canavar_ünü += kazanılan_ünü\n\n        while self.xp >= self.seviye * 100:\n            self.seviye += 1\n\n        ganimet = {\n            'ad': f'Canavar Avı Ganimeti {av_numarasi}',\n            'seviye': self.seviye,\n            'deger': max(20, kazanılan_altin // 2 + self.seviye * 3),\n            'av_numarasi': av_numarasi,\n            'canavar_ünü': kazanılan_ünü\n        }\n        self.envanter.append(ganimet)\n\n        return {\n            'oyuncu': self.isim,\n            'basarili': True,\n            'av_numarasi': av_numarasi,\n            'savaş_gücü': savaş_gücü,\n            'canavar_gücü': canavar_gücü,\n            'kazanılan_xp': kazanılan_xp,\n            'toplam_xp': self.xp,\n            'kazanılan_altin': kazanılan_altin,\n            'toplam_altin': self.altin,\n            'kazanılan_ünü': kazanılan_ünü,\n            'canavar_ünü': self.canavar_ünü,\n            'eski_seviye': eski_seviye,\n            'yeni_seviye': self.seviye,\n            'seviye_atlama_sayisi': self.seviye - eski_seviye,\n            'ganimet': ganimet,\n            'envanter_sayisi': len(self.envanter),\n            'onceki_xp': eski_xp,\n            'onceki_altin': eski_altin\n        }"
-    }
-  ],
-  "player": {
-    "level": 1,
-    "xp": 0,
-    "inventory": 0
+      "summary": "Enerji tüketimi yüksek ama güçlü bir Güçlü Saldırı aksiyonu eklendi.",
+      "reason": "Deterministik kontrol kapılarından biri geçmedi.",
+      "status": "REJECTED"
+    },
+    "history_tail": [
+      {
+        "time": "2026-09-17 18:08:20 UTC",
+        "attempt": 5,
+        "generation": 10,
+        "method": "arena_meydan_okumasi",
+        "result": "rejected",
+        "reason": "Yeni metot çalışma testini geçemedi.",
+        "baseline_score": null,
+        "candidate_score": null,
+        "score_difference": null,
+        "code": "def arena_meydan_okumasi(self):\n    if not isinstance(getattr(self, 'altin', 0), (int, float)):\n        self.altin = 0\n    if not isinstance(getattr(self, 'arena_mac_sayisi', 0), int):\n        self.arena_mac_sayisi = 0\n\n    mac_numarasi = self.arena_mac_sayisi + 1\n    ekipman_gucu = 0\n\n    for esya in self.envanter:\n        if isinstance(esya, dict):\n            deger = esya.get('deger', esya.get('değer', 0))\n            if isinstance(deger, (int, float)) and deger > 0:\n                ekipman_gucu += int(deger)\n\n    rakip_gucu = self.seviye * 30 + (mac_numarasi - 1) * 8\n    savas_gucu = self.seviye * 35 + min(ekipman_gucu, self.seviye * 60)\n    eski_seviye = self.seviye\n    eski_altin = self.altin\n    giris_ucreti = min(self.altin, self.seviye * 5)\n    self.altin -= giris_ucreti\n    self.arena_mac_sayisi = mac_numarasi\n\n    if savas_gucu >= rakip_gucu:\n        kazanilan_xp = self.seviye * 30 + ekipman_gucu // 4\n        kazanilan_altin = self.seviye * 20 + mac_numarasi * 3\n        self.xp += kazanilan_xp\n        self.altin += kazanilan_altin\n        while self.xp >= self.seviye * 100:\n            self.seviye += 1\n\n        odul = {\n            'ad': f'Arena Zafer Madalyası {mac_numarasi}',\n            'seviye': self.seviye,\n            'deger': max(15, kazanilan_altin // 2)\n        }\n        self.envanter.append(odul)\n\n        return {\n            'oyuncu': self.isim,\n            'basarili': True,\n            'mac_numarasi': mac_numarasi,\n            'rakip_gucu': rakip_gucu,\n            'savas_gucu': savas_gucu,\n            'giris_ucreti': giris_ucreti,\n            'kazanilan_xp': kazanilan_xp,\n            'toplam_xp': self.xp,\n            'kazanilan_altin': kazanilan_altin,\n            'toplam_altin': self.altin,\n            'eski_seviye': eski_seviye,\n            'yeni_seviye': self.seviye,\n            'seviye_atlama_sayisi': self.seviye - eski_seviye,\n            'odul': odul,\n            'envanter_sayisi': len(self.envanter)\n        }\n\n    teselli_xp = max(5, self.seviye * 8)\n    self.xp += teselli_xp\n    while self.xp >= self.seviye * 100:\n        self.seviye += 1\n\n    return {\n        'oyuncu': self.isim,\n        'basarili': False,\n        'mac_numarasi': mac_numarasi,\n        'rakip_gucu': rakip_gucu,\n        'savas_gucu': savas_gucu,\n        'giris_ucreti': giris_ucreti,\n        'kazanilan_xp': teselli_xp,\n        'toplam_xp': self.xp,\n        'kazanilan_altin': 0,\n        'toplam_altin': self.altin,\n        'eski_seviye': eski_seviye,\n        'yeni_seviye': self.seviye,\n        'seviye_atlama_sayisi': self.seviye - eski_seviye,\n        'neden': 'Rakibin gücü aşılamadı.',\n        'envanter_sayisi': len(self.envanter)\n    }"
+      },
+      {
+        "time": "2026-09-17 21:40:09 UTC",
+        "attempt": 6,
+        "generation": 11,
+        "previous_generation": 10,
+        "method": "boss_savasi",
+        "result": "accepted",
+        "reason": "Aday testleri geçti ve yeni özellik minimum kalite eşiğini geçti.",
+        "baseline_score": 95.02,
+        "candidate_score": 101.52,
+        "score_difference": 6.5,
+        "method_quality": 65,
+        "code": "def boss_savasi(self):\n    if not hasattr(self, 'altin'):\n        self.altin = 0\n    if not hasattr(self, 'boss_savasi_sayisi'):\n        self.boss_savasi_sayisi = 0\n\n    self.boss_savasi_sayisi += 1\n    savas_no = self.boss_savasi_sayisi\n    eski_seviye = self.seviye\n    eski_xp = self.xp\n    eski_altin = self.altin\n\n    ekipman_gucu = 0\n    for esya in self.envanter:\n        if isinstance(esya, dict):\n            deger = esya.get('deger', esya.get('değer', 0))\n            if isinstance(deger, (int, float)) and deger > 0:\n                ekipman_gucu += int(deger)\n\n    oyuncu_gucu = self.seviye * 30 + ekipman_gucu + len(self.envanter) * 5\n    boss_gucu = self.seviye * 25 + savas_no * 8\n    basarili = oyuncu_gucu >= boss_gucu\n\n    if basarili:\n        kazanilan_xp = self.seviye * 35 + ekipman_gucu // 2\n        kazanilan_altin = self.seviye * 20 + len(self.envanter) * 7\n        self.xp += kazanilan_xp\n        self.altin += kazanilan_altin\n\n        while self.xp >= self.seviye * 100:\n            self.seviye += 1\n\n        ganimet = {\n            'ad': f'Boss Ganimeti {savas_no}',\n            'seviye': self.seviye,\n            'deger': max(20, kazanilan_altin // 2)\n        }\n        self.envanter.append(ganimet)\n\n        return {\n            'oyuncu': self.isim,\n            'basarili': True,\n            'savas_numarasi': savas_no,\n            'oyuncu_gucu': oyuncu_gucu,\n            'boss_gucu': boss_gucu,\n            'kazanilan_xp': kazanilan_xp,\n            'toplam_xp': self.xp,\n            'kazanilan_altin': kazanilan_altin,\n            'toplam_altin': self.altin,\n            'eski_seviye': eski_seviye,\n            'yeni_seviye': self.seviye,\n            'seviye_atlama_sayisi': self.seviye - eski_seviye,\n            'ganimet': ganimet,\n            'envanter_sayisi': len(self.envanter)\n        }\n\n    kaybedilen_xp = min(self.xp, self.seviye * 10)\n    self.xp -= kaybedilen_xp\n    ceza_altini = min(self.altin, self.seviye * 5)\n    self.altin -= ceza_altini\n\n    return {\n        'oyuncu': self.isim,\n        'basarili': False,\n        'savas_numarasi': savas_no,\n        'oyuncu_gucu': oyuncu_gucu,\n        'boss_gucu': boss_gucu,\n        'kaybedilen_xp': kaybedilen_xp,\n        'toplam_xp': self.xp,\n        'kaybedilen_altin': ceza_altini,\n        'toplam_altin': self.altin,\n        'eski_seviye': eski_seviye,\n        'yeni_seviye': self.seviye,\n        'envanter_sayisi': len(self.envanter)\n    }"
+      },
+      {
+        "time": "2026-09-18 00:04:16 UTC",
+        "attempt": 7,
+        "generation": 12,
+        "previous_generation": 11,
+        "method": "ekipman_buyule",
+        "result": "accepted",
+        "reason": "Aday testleri geçti ve yeni özellik minimum kalite eşiğini geçti.",
+        "baseline_score": 94.27,
+        "candidate_score": 100.77,
+        "score_difference": 6.5,
+        "method_quality": 65,
+        "code": "def ekipman_buyule(self):\n        if not hasattr(self, 'altin'):\n            self.altin = 0\n\n        hedef_esya = None\n        hedef_index = -1\n        for index, esya in enumerate(self.envanter):\n            if isinstance(esya, dict):\n                hedef_esya = esya\n                hedef_index = index\n                break\n\n        if hedef_esya is None:\n            return {\n                'oyuncu': self.isim,\n                'basarili': False,\n                'neden': 'Büyülenecek uygun bir ekipman bulunmuyor.',\n                'toplam_altin': self.altin,\n                'envanter_sayisi': len(self.envanter)\n            }\n\n        mevcut_deger = hedef_esya.get('deger', hedef_esya.get('değer', 0))\n        if not isinstance(mevcut_deger, (int, float)) or mevcut_deger < 0:\n            mevcut_deger = 0\n\n        buyu_sayisi = hedef_esya.get('buyu_sayisi', 0)\n        if not isinstance(buyu_sayisi, int) or buyu_sayisi < 0:\n            buyu_sayisi = 0\n\n        maliyet = self.seviye * 12 + int(mevcut_deger * 0.25) + buyu_sayisi * 10\n        maliyet = max(15, maliyet)\n\n        if self.altin < maliyet:\n            return {\n                'oyuncu': self.isim,\n                'basarili': False,\n                'neden': 'Büyüleme için yeterli altın bulunmuyor.',\n                'gereken_altin': maliyet,\n                'toplam_altin': self.altin,\n                'eksik_altin': maliyet - self.altin,\n                'esya': hedef_esya,\n                'envanter_sayisi': len(self.envanter)\n            }\n\n        eski_seviye = self.seviye\n        eski_altin = self.altin\n        eski_deger = mevcut_deger\n        deger_artisi = max(10, self.seviye * 8 + buyu_sayisi * 4)\n        kazanilan_xp = self.seviye * 10 + deger_artisi // 2\n\n        self.altin -= maliyet\n        self.xp += kazanilan_xp\n        hedef_esya['deger'] = int(eski_deger + deger_artisi)\n        hedef_esya['buyu_sayisi'] = buyu_sayisi + 1\n        hedef_esya['buyulu'] = True\n        hedef_esya['buyu_adi'] = f'Kademe {buyu_sayisi + 1} Büyüsü'\n\n        while self.xp >= self.seviye * 100:\n            self.seviye += 1\n\n        return {\n            'oyuncu': self.isim,\n            'basarili': True,\n            'esya_indexi': hedef_index,\n            'buyulenen_esya': hedef_esya,\n            'harcanan_altin': maliyet,\n            'onceki_altin': eski_altin,\n            'toplam_altin': self.altin,\n            'deger_artisi': deger_artisi,\n            'eski_deger': eski_deger,\n            'yeni_deger': hedef_esya['deger'],\n            'kazanilan_xp': kazanilan_xp,\n            'toplam_xp': self.xp,\n            'eski_seviye': eski_seviye,\n            'yeni_seviye': self.seviye,\n            'seviye_atlama_sayisi': self.seviye - eski_seviye,\n            'envanter_sayisi': len(self.envanter)\n        }"
+      },
+      {
+        "time": "2026-09-18 04:32:17 UTC",
+        "attempt": 8,
+        "generation": 13,
+        "previous_generation": 12,
+        "method": "gizli_gecit_kesfi",
+        "result": "accepted",
+        "reason": "Aday testleri geçti ve yeni özellik minimum kalite eşiğini geçti.",
+        "baseline_score": 93.63,
+        "candidate_score": 100.13,
+        "score_difference": 6.5,
+        "method_quality": 65,
+        "code": "def gizli_gecit_kesfi(self):\n        if not hasattr(self, 'altin'):\n            self.altin = 0\n        if not hasattr(self, 'gecit_kesfi_sayisi'):\n            self.gecit_kesfi_sayisi = 0\n\n        if not self.envanter:\n            return {\n                'oyuncu': self.isim,\n                'basarili': False,\n                'neden': 'Gizli geçidi açmak için en az bir eşya gerekli.',\n                'toplam_altin': self.altin,\n                'envanter_sayisi': 0\n            }\n\n        deneme_no = self.gecit_kesfi_sayisi + 1\n        anahtar_esya = self.envanter[0]\n        anahtar_degeri = 0\n\n        if isinstance(anahtar_esya, dict):\n            anahtar_degeri = anahtar_esya.get('deger', anahtar_esya.get('değer', 0))\n            if not isinstance(anahtar_degeri, (int, float)) or anahtar_degeri < 0:\n                anahtar_degeri = 0\n\n        diger_esya_gucu = 0\n        for esya in self.envanter[1:]:\n            if isinstance(esya, dict):\n                deger = esya.get('deger', esya.get('değer', 0))\n                if isinstance(deger, (int, float)) and deger > 0:\n                    diger_esya_gucu += int(deger)\n\n        kesif_gucu = self.seviye * 35 + int(anahtar_degeri) + min(diger_esya_gucu, self.seviye * 30)\n        gecit_zorlugu = self.seviye * 30 + deneme_no * 12\n        basarili = kesif_gucu >= gecit_zorlugu\n        eski_seviye = self.seviye\n        eski_xp = self.xp\n        eski_altin = self.altin\n\n        self.gecit_kesfi_sayisi = deneme_no\n\n        if not basarili:\n            kaybedilen_xp = min(self.xp, self.seviye * 8)\n            kaybedilen_altin = min(self.altin, self.seviye * 6)\n            self.xp -= kaybedilen_xp\n            self.altin -= kaybedilen_altin\n            return {\n                'oyuncu': self.isim,\n                'basarili': False,\n                'kesif_numarasi': deneme_no,\n                'kesif_gucu': kesif_gucu,\n                'gecit_zorlugu': gecit_zorlugu,\n                'kaybedilen_xp': kaybedilen_xp,\n                'toplam_xp': self.xp,\n                'kaybedilen_altin': kaybedilen_altin,\n                'toplam_altin': self.altin,\n                'eski_seviye': eski_seviye,\n                'yeni_seviye': self.seviye,\n                'kullanilan_esya': anahtar_esya,\n                'envanter_sayisi': len(self.envanter)\n            }\n\n        kullanilan_esya = self.envanter.pop(0)\n        kazanilan_xp = self.seviye * 30 + int(anahtar_degeri) // 2\n        kazanilan_altin = self.seviye * 25 + int(anahtar_degeri) // 3\n        self.xp += kazanilan_xp\n        self.altin += kazanilan_altin\n\n        while self.xp >= self.seviye * 100:\n            self.seviye += 1\n\n        bulunan_eser = {\n            'ad': f'Gizli Geçit Eseri {deneme_no}',\n            'seviye': self.seviye,\n            'deger': max(25, kazanilan_altin + self.seviye * 5),\n            'kaynak_esya': kullanilan_esya\n        }\n        self.envanter.append(bulunan_eser)\n\n        return {\n            'oyuncu': self.isim,\n            'basarili': True,\n            'kesif_numarasi': deneme_no,\n            'kesif_gucu': kesif_gucu,\n            'gecit_zorlugu': gecit_zorlugu,\n            'kullanilan_esya': kullanilan_esya,\n            'bulunan_eser': bulunan_eser,\n            'kazanilan_xp': kazanilan_xp,\n            'toplam_xp': self.xp,\n            'kazanilan_altin': kazanilan_altin,\n            'toplam_altin': self.altin,\n            'eski_seviye': eski_seviye,\n            'yeni_seviye': self.seviye,\n            'seviye_atlama_sayisi': self.seviye - eski_seviye,\n            'envanter_sayisi': len(self.envanter)\n        }"
+      },
+      {
+        "time": "2026-09-18 09:09:21 UTC",
+        "attempt": 9,
+        "generation": 14,
+        "previous_generation": 13,
+        "method": "lonca_gorevi",
+        "result": "accepted",
+        "reason": "Aday testleri geçti ve yeni özellik minimum kalite eşiğini geçti.",
+        "baseline_score": 93.09,
+        "candidate_score": 99.59,
+        "score_difference": 6.5,
+        "method_quality": 65,
+        "code": "def lonca_gorevi(self):\n        if not hasattr(self, 'altin'):\n            self.altin = 0\n        if not hasattr(self, 'lonca_gorevi_sayisi'):\n            self.lonca_gorevi_sayisi = 0\n        if not hasattr(self, 'lonca_itibari'):\n            self.lonca_itibari = 0\n\n        gorev_numarasi = self.lonca_gorevi_sayisi + 1\n        ekipman_degeri = 0\n\n        for esya in self.envanter:\n            if isinstance(esya, dict):\n                deger = esya.get('deger', esya.get('değer', 0))\n                if isinstance(deger, (int, float)) and deger > 0:\n                    ekipman_degeri += int(deger)\n\n        oyuncu_gucu = self.seviye * 35 + min(ekipman_degeri, self.seviye * 50) + len(self.envanter) * 4\n        gorev_zorlugu = self.seviye * 28 + gorev_numarasi * 7\n        eski_seviye = self.seviye\n        eski_xp = self.xp\n        eski_altin = self.altin\n        self.lonca_gorevi_sayisi = gorev_numarasi\n\n        if oyuncu_gucu < gorev_zorlugu:\n            kaybedilen_xp = min(self.xp, self.seviye * 6)\n            kaybedilen_altin = min(self.altin, self.seviye * 4)\n            self.xp -= kaybedilen_xp\n            self.altin -= kaybedilen_altin\n            return {\n                'oyuncu': self.isim,\n                'basarili': False,\n                'gorev_numarasi': gorev_numarasi,\n                'oyuncu_gucu': oyuncu_gucu,\n                'gorev_zorlugu': gorev_zorlugu,\n                'kaybedilen_xp': kaybedilen_xp,\n                'toplam_xp': self.xp,\n                'kaybedilen_altin': kaybedilen_altin,\n                'toplam_altin': self.altin,\n                'eski_seviye': eski_seviye,\n                'yeni_seviye': self.seviye,\n                'lonca_itibari': self.lonca_itibari,\n                'envanter_sayisi': len(self.envanter)\n            }\n\n        kazanilan_xp = self.seviye * 22 + min(ekipman_degeri, self.seviye * 30) // 2\n        kazanilan_altin = self.seviye * 16 + len(self.envanter) * 6\n        kazanilan_itibar = 10 + self.seviye * 3\n        self.xp += kazanilan_xp\n        self.altin += kazanilan_altin\n        self.lonca_itibari += kazanilan_itibar\n\n        while self.xp >= self.seviye * 100:\n            self.seviye += 1\n\n        odul = {\n            'ad': f'Lonca Ödülü {gorev_numarasi}',\n            'seviye': self.seviye,\n            'deger': max(15, kazanilan_altin // 2),\n            'itibar': kazanilan_itibar\n        }\n        self.envanter.append(odul)\n\n        return {\n            'oyuncu': self.isim,\n            'basarili': True,\n            'gorev_numarasi': gorev_numarasi,\n            'oyuncu_gucu': oyuncu_gucu,\n            'gorev_zorlugu': gorev_zorlugu,\n            'kazanilan_xp': kazanilan_xp,\n            'toplam_xp': self.xp,\n            'kazanilan_altin': kazanilan_altin,\n            'toplam_altin': self.altin,\n            'kazanilan_itibar': kazanilan_itibar,\n            'lonca_itibari': self.lonca_itibari,\n            'eski_seviye': eski_seviye,\n            'yeni_seviye': self.seviye,\n            'seviye_atlama_sayisi': self.seviye - eski_seviye,\n            'odul': odul,\n            'envanter_sayisi': len(self.envanter),\n            'onceki_xp': eski_xp,\n            'onceki_altin': eski_altin\n        }"
+      },
+      {
+        "time": "2026-09-18 13:46:12 UTC",
+        "attempt": 10,
+        "generation": 15,
+        "previous_generation": 14,
+        "method": "hazine_avi",
+        "result": "accepted",
+        "reason": "Aday testleri geçti ve yeni özellik minimum kalite eşiğini geçti.",
+        "baseline_score": 92.61,
+        "candidate_score": 99.11,
+        "score_difference": 6.5,
+        "method_quality": 65,
+        "code": "def hazine_avi(self):\n    if not hasattr(self, 'altin'):\n        self.altin = 0\n    if not hasattr(self, 'hazine_avi_sayisi'):\n        self.hazine_avi_sayisi = 0\n\n    av_numarasi = self.hazine_avi_sayisi + 1\n    ekipman_degeri = 0\n\n    for esya in self.envanter:\n        if isinstance(esya, dict):\n            deger = esya.get('deger', esya.get('değer', 0))\n            if isinstance(deger, (int, float)) and deger > 0:\n                ekipman_degeri += int(deger)\n\n    kesif_gucu = self.seviye * 40 + min(ekipman_degeri, self.seviye * 60) + len(self.envanter) * 6\n    hazine_zorlugu = self.seviye * 32 + av_numarasi * 9\n    eski_seviye = self.seviye\n    eski_xp = self.xp\n    eski_altin = self.altin\n    self.hazine_avi_sayisi = av_numarasi\n\n    if kesif_gucu < hazine_zorlugu:\n        kaybedilen_xp = min(self.xp, self.seviye * 5)\n        self.xp -= kaybedilen_xp\n        return {\n            'oyuncu': self.isim,\n            'basarili': False,\n            'av_numarasi': av_numarasi,\n            'kesif_gucu': kesif_gucu,\n            'hazine_zorlugu': hazine_zorlugu,\n            'kaybedilen_xp': kaybedilen_xp,\n            'toplam_xp': self.xp,\n            'toplam_altin': self.altin,\n            'eski_seviye': eski_seviye,\n            'yeni_seviye': self.seviye,\n            'envanter_sayisi': len(self.envanter)\n        }\n\n    kazanilan_xp = self.seviye * 28 + min(ekipman_degeri, self.seviye * 50) // 2\n    kazanilan_altin = self.seviye * 22 + len(self.envanter) * 8\n    self.xp += kazanilan_xp\n    self.altin += kazanilan_altin\n\n    while self.xp >= self.seviye * 100:\n        self.seviye += 1\n\n    hazine = {\n        'ad': f'Kadim Hazine {av_numarasi}',\n        'seviye': self.seviye,\n        'deger': max(25, kazanilan_altin // 2 + self.seviye * 5),\n        'av_numarasi': av_numarasi\n    }\n    self.envanter.append(hazine)\n\n    return {\n        'oyuncu': self.isim,\n        'basarili': True,\n        'av_numarasi': av_numarasi,\n        'kesif_gucu': kesif_gucu,\n        'hazine_zorlugu': hazine_zorlugu,\n        'kazanilan_xp': kazanilan_xp,\n        'toplam_xp': self.xp,\n        'kazanilan_altin': kazanilan_altin,\n        'toplam_altin': self.altin,\n        'eski_seviye': eski_seviye,\n        'yeni_seviye': self.seviye,\n        'seviye_atlama_sayisi': self.seviye - eski_seviye,\n        'hazine': hazine,\n        'envanter_sayisi': len(self.envanter),\n        'onceki_xp': eski_xp,\n        'onceki_altin': eski_altin\n    }"
+      },
+      {
+        "time": "2026-09-18 17:38:22 UTC",
+        "attempt": 11,
+        "generation": 16,
+        "previous_generation": 15,
+        "method": "kale_savunmasi",
+        "result": "accepted",
+        "reason": "Aday testleri geçti ve yeni özellik minimum kalite eşiğini geçti.",
+        "baseline_score": 92.2,
+        "candidate_score": 98.7,
+        "score_difference": 6.5,
+        "method_quality": 65,
+        "code": "def kale_savunmasi(self):\n    if not hasattr(self, 'altin'):\n        self.altin = 0\n    if not hasattr(self, 'kale_savunmasi_sayisi'):\n        self.kale_savunmasi_sayisi = 0\n    if not hasattr(self, 'savunma_itibari'):\n        self.savunma_itibari = 0\n\n    dalga_numarasi = self.kale_savunmasi_sayisi + 1\n    ekipman_gucu = 0\n\n    for esya in self.envanter:\n        if isinstance(esya, dict):\n            deger = esya.get('deger', esya.get('değer', 0))\n            if isinstance(deger, (int, float)) and deger > 0:\n                ekipman_gucu += int(deger)\n\n    savunma_gucu = (\n        self.seviye * 40\n        + min(ekipman_gucu, self.seviye * 70)\n        + len(self.envanter) * 5\n    )\n    isgal_zorlugu = self.seviye * 35 + dalga_numarasi * 10\n    eski_seviye = self.seviye\n    eski_xp = self.xp\n    eski_altin = self.altin\n\n    self.kale_savunmasi_sayisi = dalga_numarasi\n\n    if savunma_gucu < isgal_zorlugu:\n        kaybedilen_xp = min(self.xp, self.seviye * 7)\n        kaybedilen_altin = min(self.altin, self.seviye * 5)\n        self.xp -= kaybedilen_xp\n        self.altin -= kaybedilen_altin\n\n        return {\n            'oyuncu': self.isim,\n            'basarili': False,\n            'dalga_numarasi': dalga_numarasi,\n            'savunma_gucu': savunma_gucu,\n            'isgal_zorlugu': isgal_zorlugu,\n            'kaybedilen_xp': kaybedilen_xp,\n            'toplam_xp': self.xp,\n            'kaybedilen_altin': kaybedilen_altin,\n            'toplam_altin': self.altin,\n            'eski_seviye': eski_seviye,\n            'yeni_seviye': self.seviye,\n            'savunma_itibari': self.savunma_itibari,\n            'envanter_sayisi': len(self.envanter)\n        }\n\n    kazanilan_xp = self.seviye * 30 + min(ekipman_gucu, self.seviye * 50) // 2\n    kazanilan_altin = self.seviye * 18 + len(self.envanter) * 6\n    kazanilan_itibar = 8 + self.seviye * 2\n\n    self.xp += kazanilan_xp\n    self.altin += kazanilan_altin\n    self.savunma_itibari += kazanilan_itibar\n\n    while self.xp >= self.seviye * 100:\n        self.seviye += 1\n\n    tahkimat = {\n        'ad': f'Kale Savunma Nişanı {dalga_numarasi}',\n        'seviye': self.seviye,\n        'deger': max(20, kazanilan_altin // 2),\n        'itibar': kazanilan_itibar,\n        'dalga': dalga_numarasi\n    }\n    self.envanter.append(tahkimat)\n\n    return {\n        'oyuncu': self.isim,\n        'basarili': True,\n        'dalga_numarasi': dalga_numarasi,\n        'savunma_gucu': savunma_gucu,\n        'isgal_zorlugu': isgal_zorlugu,\n        'kazanilan_xp': kazanilan_xp,\n        'toplam_xp': self.xp,\n        'kazanilan_altin': kazanilan_altin,\n        'toplam_altin': self.altin,\n        'kazanilan_itibar': kazanilan_itibar,\n        'savunma_itibari': self.savunma_itibari,\n        'eski_seviye': eski_seviye,\n        'yeni_seviye': self.seviye,\n        'seviye_atlama_sayisi': self.seviye - eski_seviye,\n        'tahkimat': tahkimat,\n        'envanter_sayisi': len(self.envanter),\n        'onceki_xp': eski_xp,\n        'onceki_altin': eski_altin\n    }"
+      },
+      {
+        "time": "2026-09-18 20:49:28 UTC",
+        "attempt": 12,
+        "generation": 17,
+        "previous_generation": 16,
+        "method": "yetenek_ustaligi",
+        "result": "accepted",
+        "reason": "Aday testleri geçti ve yeni özellik minimum kalite eşiğini geçti.",
+        "baseline_score": 91.84,
+        "candidate_score": 98.34,
+        "score_difference": 6.5,
+        "method_quality": 65,
+        "code": "def yetenek_ustaligi(self):\n    if not hasattr(self, 'altin'):\n        self.altin = 0\n    if not hasattr(self, 'yetenek_ustaligi_sayisi'):\n        self.yetenek_ustaligi_sayisi = 0\n    if not hasattr(self, 'yetenek_puanlari'):\n        self.yetenek_puanlari = 0\n    if not hasattr(self, 'yetenekler'):\n        self.yetenekler = []\n\n    mevcut_ustalik = self.yetenek_ustaligi_sayisi\n    maliyet = self.seviye * 20 + mevcut_ustalik * 15\n\n    if self.altin < maliyet:\n        return {\n            'oyuncu': self.isim,\n            'basarili': False,\n            'neden': 'Yetenek eğitimi için yeterli altın bulunmuyor.',\n            'gereken_altin': maliyet,\n            'toplam_altin': self.altin,\n            'eksik_altin': maliyet - self.altin,\n            'ustalik_seviyesi': mevcut_ustalik,\n            'yetenek_sayisi': len(self.yetenekler)\n        }\n\n    eski_seviye = self.seviye\n    eski_xp = self.xp\n    eski_altin = self.altin\n\n    self.altin -= maliyet\n    self.yetenek_ustaligi_sayisi += 1\n\n    kazanilan_xp = self.seviye * 18 + mevcut_ustalik * 10\n    kazanilan_puan = 1 + self.seviye // 5\n\n    self.xp += kazanilan_xp\n    self.yetenek_puanlari += kazanilan_puan\n\n    while self.xp >= self.seviye * 100:\n        self.seviye += 1\n\n    yetenek_adlari = [\n        'Çelik İrade',\n        'Hızlı Refleks',\n        'Kritik Darbe',\n        'Savaş Sezgisi',\n        'Efsanevi Dayanıklılık'\n    ]\n    yetenek_adi = yetenek_adlari[mevcut_ustalik % len(yetenek_adlari)]\n\n    yetenek = {\n        'ad': yetenek_adi,\n        'kademe': mevcut_ustalik + 1,\n        'puan': kazanilan_puan,\n        'acilma_seviyesi': self.seviye\n    }\n    self.yetenekler.append(yetenek)\n\n    return {\n        'oyuncu': self.isim,\n        'basarili': True,\n        'egitim_numarasi': self.yetenek_ustaligi_sayisi,\n        'egitilen_yetenek': yetenek,\n        'harcanan_altin': maliyet,\n        'onceki_altin': eski_altin,\n        'toplam_altin': self.altin,\n        'kazanilan_xp': kazanilan_xp,\n        'onceki_xp': eski_xp,\n        'toplam_xp': self.xp,\n        'kazanilan_yetenek_puani': kazanilan_puan,\n        'toplam_yetenek_puani': self.yetenek_puanlari,\n        'eski_seviye': eski_seviye,\n        'yeni_seviye': self.seviye,\n        'seviye_atlama_sayisi': self.seviye - eski_seviye,\n        'ustalik_seviyesi': self.yetenek_ustaligi_sayisi,\n        'yetenek_sayisi': len(self.yetenekler)\n    }"
+      },
+      {
+        "time": "2026-09-18 23:12:08 UTC",
+        "attempt": 13,
+        "generation": 18,
+        "previous_generation": 17,
+        "method": "yoldas_egitimi",
+        "result": "accepted",
+        "reason": "Aday testleri geçti ve yeni özellik minimum kalite eşiğini geçti.",
+        "baseline_score": 91.62,
+        "candidate_score": 98.12,
+        "score_difference": 6.5,
+        "method_quality": 65,
+        "code": "def yoldas_egitimi(self):\n    if not hasattr(self, 'altin'):\n        self.altin = 0\n    if not hasattr(self, 'yoldaslar'):\n        self.yoldaslar = []\n    if not hasattr(self, 'yoldas_egitim_sayisi'):\n        self.yoldas_egitim_sayisi = 0\n    if not hasattr(self, 'yoldas_bonusu'):\n        self.yoldas_bonusu = 0\n\n    egitim_numarasi = self.yoldas_egitim_sayisi + 1\n    maliyet = self.seviye * 18 + len(self.yoldaslar) * 25\n\n    if self.altin < maliyet:\n        return {\n            'oyuncu': self.isim,\n            'basarili': False,\n            'neden': 'Yoldaş eğitimi için yeterli altın bulunmuyor.',\n            'gereken_altin': maliyet,\n            'toplam_altin': self.altin,\n            'eksik_altin': maliyet - self.altin,\n            'yoldas_sayisi': len(self.yoldaslar),\n            'yoldas_bonusu': self.yoldas_bonusu\n        }\n\n    eski_seviye = self.seviye\n    eski_xp = self.xp\n    eski_altin = self.altin\n    eski_bonus = self.yoldas_bonusu\n\n    yoldas_adlari = ['Kurt Yoldaşı', 'Kartal Gözcüsü', 'Çelik Golem', 'Gölge Tilki']\n    yoldas_adi = yoldas_adlari[len(self.yoldaslar) % len(yoldas_adlari)]\n    yoldas_kademesi = len(self.yoldaslar) + 1\n    bonus = self.seviye * 6 + yoldas_kademesi * 4\n    kazanilan_xp = self.seviye * 14 + yoldas_kademesi * 8\n\n    self.altin -= maliyet\n    self.xp += kazanilan_xp\n    self.yoldas_egitim_sayisi = egitim_numarasi\n    self.yoldas_bonusu += bonus\n\n    while self.xp >= self.seviye * 100:\n        self.seviye += 1\n\n    yoldas = {\n        'ad': yoldas_adi,\n        'kademe': yoldas_kademesi,\n        'savas_bonusu': bonus,\n        'egitim_seviyesi': self.seviye\n    }\n    self.yoldaslar.append(yoldas)\n\n    return {\n        'oyuncu': self.isim,\n        'basarili': True,\n        'egitim_numarasi': egitim_numarasi,\n        'egitilen_yoldas': yoldas,\n        'harcanan_altin': maliyet,\n        'onceki_altin': eski_altin,\n        'toplam_altin': self.altin,\n        'kazanilan_xp': kazanilan_xp,\n        'onceki_xp': eski_xp,\n        'toplam_xp': self.xp,\n        'eski_seviye': eski_seviye,\n        'yeni_seviye': self.seviye,\n        'seviye_atlama_sayisi': self.seviye - eski_seviye,\n        'bonus_artisi': bonus,\n        'onceki_yoldas_bonusu': eski_bonus,\n        'yoldas_bonusu': self.yoldas_bonusu,\n        'yoldas_sayisi': len(self.yoldaslar)\n    }"
+      },
+      {
+        "time": "2026-09-19 01:29:53 UTC",
+        "attempt": 14,
+        "generation": 19,
+        "previous_generation": 18,
+        "method": "efsanevi_eser_uretimi",
+        "result": "accepted",
+        "reason": "Aday testleri geçti ve yeni özellik minimum kalite eşiğini geçti.",
+        "baseline_score": 91.33,
+        "candidate_score": 97.83,
+        "score_difference": 6.5,
+        "method_quality": 65,
+        "code": "def efsanevi_eser_uretimi(self):\n        if not hasattr(self, 'altin'):\n            self.altin = 0\n\n        uygun_esyalar = []\n        uygun_indeksler = []\n\n        for indeks, esya in enumerate(self.envanter):\n            if isinstance(esya, dict):\n                deger = esya.get('deger', esya.get('değer', 0))\n                if not isinstance(deger, (int, float)) or deger < 0:\n                    deger = 0\n                uygun_esyalar.append(esya)\n                uygun_indeksler.append(indeks)\n                if len(uygun_esyalar) == 3:\n                    break\n\n        if len(uygun_esyalar) < 3:\n            return {\n                'oyuncu': self.isim,\n                'basarili': False,\n                'neden': 'Efsanevi eser üretmek için en az üç uygun eşya gerekli.',\n                'toplam_altin': self.altin,\n                'envanter_sayisi': len(self.envanter)\n            }\n\n        toplam_kaynak_degeri = 0\n        for esya in uygun_esyalar:\n            deger = esya.get('deger', esya.get('değer', 0))\n            if not isinstance(deger, (int, float)) or deger < 0:\n                deger = 0\n            toplam_kaynak_degeri += int(deger)\n\n        maliyet = max(30, self.seviye * 25 + toplam_kaynak_degeri // 2)\n\n        if self.altin < maliyet:\n            return {\n                'oyuncu': self.isim,\n                'basarili': False,\n                'neden': 'Efsanevi eser üretimi için yeterli altın bulunmuyor.',\n                'gereken_altin': maliyet,\n                'toplam_altin': self.altin,\n                'eksik_altin': maliyet - self.altin,\n                'kaynak_degeri': toplam_kaynak_degeri,\n                'envanter_sayisi': len(self.envanter)\n            }\n\n        eski_seviye = self.seviye\n        eski_xp = self.xp\n        eski_altin = self.altin\n\n        for indeks in reversed(uygun_indeksler):\n            self.envanter.pop(indeks)\n\n        self.altin -= maliyet\n        kazanilan_xp = self.seviye * 30 + toplam_kaynak_degeri // 3\n        self.xp += kazanilan_xp\n\n        while self.xp >= self.seviye * 100:\n            self.seviye += 1\n\n        eser_degeri = max(\n            60,\n            toplam_kaynak_degeri + self.seviye * 20 + maliyet // 2\n        )\n\n        efsanevi_eser = {\n            'ad': f'Efsanevi Eser {self.seviye}',\n            'seviye': self.seviye,\n            'deger': eser_degeri,\n            'kalite': 'efsanevi',\n            'kaynaklar': uygun_esyalar\n        }\n        self.envanter.append(efsanevi_eser)\n\n        return {\n            'oyuncu': self.isim,\n            'basarili': True,\n            'uretilen_eser': efsanevi_eser,\n            'kullanilan_kaynaklar': uygun_esyalar,\n            'harcanan_altin': maliyet,\n            'onceki_altin': eski_altin,\n            'toplam_altin': self.altin,\n            'kazanilan_xp': kazanilan_xp,\n            'onceki_xp': eski_xp,\n            'toplam_xp': self.xp,\n            'eski_seviye': eski_seviye,\n            'yeni_seviye': self.seviye,\n            'seviye_atlama_sayisi': self.seviye - eski_seviye,\n            'kaynak_degeri': toplam_kaynak_degeri,\n            'envanter_sayisi': len(self.envanter)\n        }"
+      },
+      {
+        "time": "2026-09-19 06:30:27 UTC",
+        "attempt": 15,
+        "generation": 20,
+        "previous_generation": 19,
+        "method": "canavar_avı",
+        "result": "accepted",
+        "reason": "Aday testleri geçti ve yeni özellik minimum kalite eşiğini geçti.",
+        "baseline_score": 91.06,
+        "candidate_score": 97.56,
+        "score_difference": 6.5,
+        "method_quality": 65,
+        "code": "def canavar_avı(self):\n        if not hasattr(self, 'altin'):\n            self.altin = 0\n        if not hasattr(self, 'canavar_avı_sayisi'):\n            self.canavar_avı_sayisi = 0\n        if not hasattr(self, 'canavar_ünü'):\n            self.canavar_ünü = 0\n        if not hasattr(self, 'yoldas_bonusu'):\n            self.yoldas_bonusu = 0\n\n        av_numarasi = self.canavar_avı_sayisi + 1\n        ekipman_gücü = 0\n        for eşya in self.envanter:\n            if isinstance(eşya, dict):\n                değer = eşya.get('deger', eşya.get('değer', 0))\n                if isinstance(değer, (int, float)) and değer > 0:\n                    ekipman_gücü += int(değer)\n\n        savaş_gücü = (\n            self.seviye * 38\n            + min(ekipman_gücü, self.seviye * 75)\n            + self.yoldas_bonusu\n            + len(self.envanter) * 4\n        )\n        canavar_gücü = self.seviye * 30 + av_numarasi * 8\n\n        eski_seviye = self.seviye\n        eski_xp = self.xp\n        eski_altin = self.altin\n        self.canavar_avı_sayisi = av_numarasi\n\n        if savaş_gücü < canavar_gücü:\n            kaybedilen_xp = min(self.xp, self.seviye * 8)\n            kaybedilen_altin = min(self.altin, self.seviye * 4)\n            self.xp -= kaybedilen_xp\n            self.altin -= kaybedilen_altin\n            return {\n                'oyuncu': self.isim,\n                'basarili': False,\n                'av_numarasi': av_numarasi,\n                'savaş_gücü': savaş_gücü,\n                'canavar_gücü': canavar_gücü,\n                'kaybedilen_xp': kaybedilen_xp,\n                'toplam_xp': self.xp,\n                'kaybedilen_altin': kaybedilen_altin,\n                'toplam_altin': self.altin,\n                'eski_seviye': eski_seviye,\n                'yeni_seviye': self.seviye,\n                'canavar_ünü': self.canavar_ünü,\n                'envanter_sayisi': len(self.envanter)\n            }\n\n        kazanılan_xp = self.seviye * 32 + min(ekipman_gücü, self.seviye * 60) // 2\n        kazanılan_altin = self.seviye * 20 + len(self.envanter) * 7\n        kazanılan_ünü = 6 + self.seviye * 2\n\n        self.xp += kazanılan_xp\n        self.altin += kazanılan_altin\n        self.canavar_ünü += kazanılan_ünü\n\n        while self.xp >= self.seviye * 100:\n            self.seviye += 1\n\n        ganimet = {\n            'ad': f'Canavar Avı Ganimeti {av_numarasi}',\n            'seviye': self.seviye,\n            'deger': max(20, kazanılan_altin // 2 + self.seviye * 3),\n            'av_numarasi': av_numarasi,\n            'canavar_ünü': kazanılan_ünü\n        }\n        self.envanter.append(ganimet)\n\n        return {\n            'oyuncu': self.isim,\n            'basarili': True,\n            'av_numarasi': av_numarasi,\n            'savaş_gücü': savaş_gücü,\n            'canavar_gücü': canavar_gücü,\n            'kazanılan_xp': kazanılan_xp,\n            'toplam_xp': self.xp,\n            'kazanılan_altin': kazanılan_altin,\n            'toplam_altin': self.altin,\n            'kazanılan_ünü': kazanılan_ünü,\n            'canavar_ünü': self.canavar_ünü,\n            'eski_seviye': eski_seviye,\n            'yeni_seviye': self.seviye,\n            'seviye_atlama_sayisi': self.seviye - eski_seviye,\n            'ganimet': ganimet,\n            'envanter_sayisi': len(self.envanter),\n            'onceki_xp': eski_xp,\n            'onceki_altin': eski_altin\n        }"
+      },
+      {
+        "generation": 20,
+        "summary": "Enerji tüketimi yüksek ama güçlü bir Güçlü Saldırı aksiyonu eklendi.",
+        "reason": "Deterministik kontrol kapılarından biri geçmedi.",
+        "status": "REJECTED"
+      }
+    ]
   },
-  "methods": [
-    {
-      "name": "xp_kazan"
+  "game": {
+    "title": "YELLOW // MICRO DUNGEON",
+    "subtitle": "A tiny turn-based dungeon that the autonomous loop can evolve.",
+    "rules_version": 1,
+    "player": {
+      "max_hp": 100,
+      "max_energy": 6,
+      "starting_gold": 12,
+      "base_attack": 12,
+      "base_defense": 2,
+      "crit_chance": 0.1,
+      "crit_multiplier": 1.75
     },
-    {
-      "name": "durum_raporu"
+    "progression": {
+      "xp_per_win": 35,
+      "xp_per_loss": 8,
+      "xp_to_level": 100,
+      "gold_per_win": 9,
+      "heal_after_battle": 18
     },
-    {
-      "name": "seviye_senkronize_et"
-    },
-    {
-      "name": "ilerleme_ozeti"
-    },
-    {
-      "name": "gelisim_degeri"
-    },
-    {
-      "name": "gelisim_uygulamasi"
-    },
-    {
-      "name": "ilerleme_ritueli"
-    },
-    {
-      "name": "yildiz_uyumu"
-    },
-    {
-      "name": "esya_birlestir"
-    },
-    {
-      "name": "esya_satisi"
-    },
-    {
-      "name": "zindan_baskini"
-    },
-    {
-      "name": "boss_savasi"
-    },
-    {
-      "name": "ekipman_buyule"
-    },
-    {
-      "name": "gizli_gecit_kesfi"
-    },
-    {
-      "name": "lonca_gorevi"
-    },
-    {
-      "name": "hazine_avi"
-    },
-    {
-      "name": "kale_savunmasi"
-    },
-    {
-      "name": "yetenek_ustaligi"
-    },
-    {
-      "name": "yoldas_egitimi"
-    },
-    {
-      "name": "efsanevi_eser_uretimi"
-    },
-    {
-      "name": "canavar_avı"
+    "actions": [
+      {
+        "id": "attack",
+        "name": "Saldır",
+        "description": "Normal saldırı. Kritik vuruş küçük bir ihtimalle güçlenir.",
+        "energy": 2,
+        "effects": [
+          {
+            "type": "damage",
+            "amount": 1.0,
+            "stat": "attack"
+          }
+        ]
+      },
+      {
+        "id": "guard",
+        "name": "Savun",
+        "description": "Bu tur alınan hasarı azaltır ve az miktarda enerji geri verir.",
+        "energy": 0,
+        "effects": [
+          {
+            "type": "shield",
+            "amount": 6
+          },
+          {
+            "type": "energy",
+            "amount": 1
+          }
+        ]
+      },
+      {
+        "id": "heal",
+        "name": "İyileş",
+        "description": "Enerji harcayarak can yeniler.",
+        "energy": 3,
+        "effects": [
+          {
+            "type": "heal",
+            "amount": 20
+          }
+        ]
+      }
+    ],
+    "enemies": [
+      {
+        "id": "slime",
+        "name": "Neon Slime",
+        "hp": 54,
+        "attack": 8,
+        "defense": 1,
+        "gold": 6,
+        "xp": 24
+      },
+      {
+        "id": "drone",
+        "name": "Rust Drone",
+        "hp": 72,
+        "attack": 11,
+        "defense": 2,
+        "gold": 9,
+        "xp": 32
+      },
+      {
+        "id": "warden",
+        "name": "Archive Warden",
+        "hp": 92,
+        "attack": 14,
+        "defense": 3,
+        "gold": 13,
+        "xp": 44
+      }
+    ],
+    "shop": {
+      "potion_cost": 8,
+      "potion_heal": 24
     }
-  ]
+  },
+  "smoke_test": {
+    "ok": true,
+    "checks": [
+      "battle starts",
+      "attack damages enemy",
+      "heal restores real hp and respects max hp",
+      "shop refuses wasteful full-hp purchase"
+    ]
+  }
 }
