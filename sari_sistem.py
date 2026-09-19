@@ -452,6 +452,46 @@ class Oyuncu:
         efsanevi_eser = {'ad': f'Efsanevi Eser {self.seviye}', 'seviye': self.seviye, 'deger': eser_degeri, 'kalite': 'efsanevi', 'kaynaklar': uygun_esyalar}
         self.envanter.append(efsanevi_eser)
         return {'oyuncu': self.isim, 'basarili': True, 'uretilen_eser': efsanevi_eser, 'kullanilan_kaynaklar': uygun_esyalar, 'harcanan_altin': maliyet, 'onceki_altin': eski_altin, 'toplam_altin': self.altin, 'kazanilan_xp': kazanilan_xp, 'onceki_xp': eski_xp, 'toplam_xp': self.xp, 'eski_seviye': eski_seviye, 'yeni_seviye': self.seviye, 'seviye_atlama_sayisi': self.seviye - eski_seviye, 'kaynak_degeri': toplam_kaynak_degeri, 'envanter_sayisi': len(self.envanter)}
+
+    def canavar_avı(self):
+        if not hasattr(self, 'altin'):
+            self.altin = 0
+        if not hasattr(self, 'canavar_avı_sayisi'):
+            self.canavar_avı_sayisi = 0
+        if not hasattr(self, 'canavar_ünü'):
+            self.canavar_ünü = 0
+        if not hasattr(self, 'yoldas_bonusu'):
+            self.yoldas_bonusu = 0
+        av_numarasi = self.canavar_avı_sayisi + 1
+        ekipman_gücü = 0
+        for eşya in self.envanter:
+            if isinstance(eşya, dict):
+                değer = eşya.get('deger', eşya.get('değer', 0))
+                if isinstance(değer, (int, float)) and değer > 0:
+                    ekipman_gücü += int(değer)
+        savaş_gücü = self.seviye * 38 + min(ekipman_gücü, self.seviye * 75) + self.yoldas_bonusu + len(self.envanter) * 4
+        canavar_gücü = self.seviye * 30 + av_numarasi * 8
+        eski_seviye = self.seviye
+        eski_xp = self.xp
+        eski_altin = self.altin
+        self.canavar_avı_sayisi = av_numarasi
+        if savaş_gücü < canavar_gücü:
+            kaybedilen_xp = min(self.xp, self.seviye * 8)
+            kaybedilen_altin = min(self.altin, self.seviye * 4)
+            self.xp -= kaybedilen_xp
+            self.altin -= kaybedilen_altin
+            return {'oyuncu': self.isim, 'basarili': False, 'av_numarasi': av_numarasi, 'savaş_gücü': savaş_gücü, 'canavar_gücü': canavar_gücü, 'kaybedilen_xp': kaybedilen_xp, 'toplam_xp': self.xp, 'kaybedilen_altin': kaybedilen_altin, 'toplam_altin': self.altin, 'eski_seviye': eski_seviye, 'yeni_seviye': self.seviye, 'canavar_ünü': self.canavar_ünü, 'envanter_sayisi': len(self.envanter)}
+        kazanılan_xp = self.seviye * 32 + min(ekipman_gücü, self.seviye * 60) // 2
+        kazanılan_altin = self.seviye * 20 + len(self.envanter) * 7
+        kazanılan_ünü = 6 + self.seviye * 2
+        self.xp += kazanılan_xp
+        self.altin += kazanılan_altin
+        self.canavar_ünü += kazanılan_ünü
+        while self.xp >= self.seviye * 100:
+            self.seviye += 1
+        ganimet = {'ad': f'Canavar Avı Ganimeti {av_numarasi}', 'seviye': self.seviye, 'deger': max(20, kazanılan_altin // 2 + self.seviye * 3), 'av_numarasi': av_numarasi, 'canavar_ünü': kazanılan_ünü}
+        self.envanter.append(ganimet)
+        return {'oyuncu': self.isim, 'basarili': True, 'av_numarasi': av_numarasi, 'savaş_gücü': savaş_gücü, 'canavar_gücü': canavar_gücü, 'kazanılan_xp': kazanılan_xp, 'toplam_xp': self.xp, 'kazanılan_altin': kazanılan_altin, 'toplam_altin': self.altin, 'kazanılan_ünü': kazanılan_ünü, 'canavar_ünü': self.canavar_ünü, 'eski_seviye': eski_seviye, 'yeni_seviye': self.seviye, 'seviye_atlama_sayisi': self.seviye - eski_seviye, 'ganimet': ganimet, 'envanter_sayisi': len(self.envanter), 'onceki_xp': eski_xp, 'onceki_altin': eski_altin}
 if __name__ == '__main__':
     hero = Oyuncu()
     hero.durum_raporu()
