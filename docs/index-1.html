@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Autonom // Mavi • Kırmızı • Sarı</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar glass">
+      <div>
+        <div class="eyebrow">AUTONOM // MAVI • KIRMIZI • SARI</div>
+        <h1>Autonomous Game Lab</h1>
+        <p class="muted">Kod değişir → Red denetler → Yellow yayınlar → oyun bunu oynar.</p>
+      </div>
+      <div class="generation-pill" id="generationPill">GEN 0</div>
+    </header>
+
+    <nav class="tabs glass" aria-label="Ana bölümler">
+      <button class="tab active" data-tab="dev">Geliştirme</button>
+      <button class="tab" data-tab="game">Oyun</button>
+    </nav>
+
+    <main>
+      <section id="dev" class="tab-panel active">
+        <div class="grid dev-grid">
+          <article class="glass card hero-card">
+            <div class="status-line">
+              <span class="live-dot"></span>
+              <span id="systemStatus">LIVE</span>
+            </div>
+            <h2>Gelişim hattı</h2>
+            <p class="muted">Bu sekme son nesillerin ne yaptığını gösterir. Oyun sekmesi ise aynı kuralların oynanabilir çıktısını çalıştırır.</p>
+            <div class="metrics">
+              <div><span>Generation</span><strong id="generation">0</strong></div>
+              <div><span>Rules</span><strong id="rulesVersion">1</strong></div>
+              <div><span>Smoke test</span><strong id="smokeStatus">OK</strong></div>
+            </div>
+          </article>
+
+          <article class="glass card">
+            <div class="section-head"><h3>Son gelişme</h3><span class="mini-tag">KIRMIZI</span></div>
+            <div id="lastEvent" class="event-box">Henüz gelişme yok.</div>
+          </article>
+
+          <article class="glass card history-card">
+            <div class="section-head"><h3>Üretim geçmişi</h3><span class="mini-tag">12 kayıt</span></div>
+            <div id="history" class="history-list"></div>
+          </article>
+        </div>
+      </section>
+
+      <section id="game" class="tab-panel">
+        <div class="game-layout">
+          <article class="glass card game-main">
+            <div class="section-head">
+              <div>
+                <div class="eyebrow">PLAYABLE BUILD</div>
+                <h2 id="gameTitle">Yellow // Micro Dungeon</h2>
+              </div>
+              <button id="restartBtn" class="secondary-btn">Yeni koşu</button>
+            </div>
+
+            <div class="versus">
+              <div class="combatant player-card">
+                <span class="label">SEN</span>
+                <strong id="playerHpText">100 / 100 HP</strong>
+                <div class="bar"><i id="playerHpBar"></i></div>
+                <span id="playerMeta" class="muted">6 enerji • 12 altın</span>
+              </div>
+              <div class="vs">VS</div>
+              <div class="combatant enemy-card">
+                <span class="label">DÜŞMAN</span>
+                <strong id="enemyHpText">—</strong>
+                <div class="bar"><i id="enemyHpBar"></i></div>
+                <span id="enemyMeta" class="muted">—</span>
+              </div>
+            </div>
+
+            <div id="log" class="battle-log"></div>
+            <div id="actions" class="action-grid"></div>
+          </article>
+
+          <aside class="glass card side-card">
+            <div class="section-head"><h3>Koşu</h3><span class="mini-tag">LOCAL</span></div>
+            <div class="stat-row"><span>Seviye</span><strong id="level">1</strong></div>
+            <div class="stat-row"><span>XP</span><strong id="xp">0</strong></div>
+            <div class="stat-row"><span>Altın</span><strong id="gold">12</strong></div>
+            <hr>
+            <button id="potionBtn" class="secondary-btn full">Potion satın al</button>
+            <p id="potionInfo" class="muted small"></p>
+          </aside>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>
