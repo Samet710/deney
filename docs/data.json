@@ -6,25 +6,11 @@
     "rules_version": 2,
     "last_event": {
       "generation": 20,
-      "summary": "Seviye atlayan oyuncunun saldırı gücü artık artıyor.",
+      "summary": "Seviye atlamak artık saldırı gücünü artırıyor.",
       "reason": "Deterministik kontrol kapılarından biri geçmedi.",
       "status": "REJECTED"
     },
     "history_tail": [
-      {
-        "time": "2026-09-18 23:12:08 UTC",
-        "attempt": 13,
-        "generation": 18,
-        "previous_generation": 17,
-        "method": "yoldas_egitimi",
-        "result": "accepted",
-        "reason": "Aday testleri geçti ve yeni özellik minimum kalite eşiğini geçti.",
-        "baseline_score": 91.62,
-        "candidate_score": 98.12,
-        "score_difference": 6.5,
-        "method_quality": 65,
-        "code": "def yoldas_egitimi(self):\n    if not hasattr(self, 'altin'):\n        self.altin = 0\n    if not hasattr(self, 'yoldaslar'):\n        self.yoldaslar = []\n    if not hasattr(self, 'yoldas_egitim_sayisi'):\n        self.yoldas_egitim_sayisi = 0\n    if not hasattr(self, 'yoldas_bonusu'):\n        self.yoldas_bonusu = 0\n\n    egitim_numarasi = self.yoldas_egitim_sayisi + 1\n    maliyet = self.seviye * 18 + len(self.yoldaslar) * 25\n\n    if self.altin < maliyet:\n        return {\n            'oyuncu': self.isim,\n            'basarili': False,\n            'neden': 'Yoldaş eğitimi için yeterli altın bulunmuyor.',\n            'gereken_altin': maliyet,\n            'toplam_altin': self.altin,\n            'eksik_altin': maliyet - self.altin,\n            'yoldas_sayisi': len(self.yoldaslar),\n            'yoldas_bonusu': self.yoldas_bonusu\n        }\n\n    eski_seviye = self.seviye\n    eski_xp = self.xp\n    eski_altin = self.altin\n    eski_bonus = self.yoldas_bonusu\n\n    yoldas_adlari = ['Kurt Yoldaşı', 'Kartal Gözcüsü', 'Çelik Golem', 'Gölge Tilki']\n    yoldas_adi = yoldas_adlari[len(self.yoldaslar) % len(yoldas_adlari)]\n    yoldas_kademesi = len(self.yoldaslar) + 1\n    bonus = self.seviye * 6 + yoldas_kademesi * 4\n    kazanilan_xp = self.seviye * 14 + yoldas_kademesi * 8\n\n    self.altin -= maliyet\n    self.xp += kazanilan_xp\n    self.yoldas_egitim_sayisi = egitim_numarasi\n    self.yoldas_bonusu += bonus\n\n    while self.xp >= self.seviye * 100:\n        self.seviye += 1\n\n    yoldas = {\n        'ad': yoldas_adi,\n        'kademe': yoldas_kademesi,\n        'savas_bonusu': bonus,\n        'egitim_seviyesi': self.seviye\n    }\n    self.yoldaslar.append(yoldas)\n\n    return {\n        'oyuncu': self.isim,\n        'basarili': True,\n        'egitim_numarasi': egitim_numarasi,\n        'egitilen_yoldas': yoldas,\n        'harcanan_altin': maliyet,\n        'onceki_altin': eski_altin,\n        'toplam_altin': self.altin,\n        'kazanilan_xp': kazanilan_xp,\n        'onceki_xp': eski_xp,\n        'toplam_xp': self.xp,\n        'eski_seviye': eski_seviye,\n        'yeni_seviye': self.seviye,\n        'seviye_atlama_sayisi': self.seviye - eski_seviye,\n        'bonus_artisi': bonus,\n        'onceki_yoldas_bonusu': eski_bonus,\n        'yoldas_bonusu': self.yoldas_bonusu,\n        'yoldas_sayisi': len(self.yoldaslar)\n    }"
-      },
       {
         "time": "2026-09-19 01:29:53 UTC",
         "attempt": 14,
@@ -104,6 +90,12 @@
       {
         "generation": 20,
         "summary": "Seviye atlayan oyuncunun saldırı gücü artık artıyor.",
+        "reason": "Deterministik kontrol kapılarından biri geçmedi.",
+        "status": "REJECTED"
+      },
+      {
+        "generation": 20,
+        "summary": "Seviye atlamak artık saldırı gücünü artırıyor.",
         "reason": "Deterministik kontrol kapılarından biri geçmedi.",
         "status": "REJECTED"
       }
