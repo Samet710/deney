@@ -246,5 +246,11 @@
     "summary": "Seviye arttıkça oyuncunun saldırı gücü artık yükseliyor.",
     "reason": "Deterministik kontrol kapılarından biri geçmedi.",
     "status": "REJECTED"
+  },
+  {
+    "generation": 20,
+    "summary": "Seviye ilerlemesi artık saldırı gücünü artırıyor.",
+    "reason": "Deterministik kontrol kapılarından biri geçmedi.",
+    "status": "REJECTED"
   }
 ]
