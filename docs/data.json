@@ -6,25 +6,11 @@
     "rules_version": 2,
     "last_event": {
       "generation": 20,
-      "summary": "Seviye atlamak artık saldırı gücünü artırıyor.",
+      "summary": "Seviye artık saldırı gücünü artırıyor.",
       "reason": "Deterministik kontrol kapılarından biri geçmedi.",
       "status": "REJECTED"
     },
     "history_tail": [
-      {
-        "time": "2026-09-19 01:29:53 UTC",
-        "attempt": 14,
-        "generation": 19,
-        "previous_generation": 18,
-        "method": "efsanevi_eser_uretimi",
-        "result": "accepted",
-        "reason": "Aday testleri geçti ve yeni özellik minimum kalite eşiğini geçti.",
-        "baseline_score": 91.33,
-        "candidate_score": 97.83,
-        "score_difference": 6.5,
-        "method_quality": 65,
-        "code": "def efsanevi_eser_uretimi(self):\n        if not hasattr(self, 'altin'):\n            self.altin = 0\n\n        uygun_esyalar = []\n        uygun_indeksler = []\n\n        for indeks, esya in enumerate(self.envanter):\n            if isinstance(esya, dict):\n                deger = esya.get('deger', esya.get('değer', 0))\n                if not isinstance(deger, (int, float)) or deger < 0:\n                    deger = 0\n                uygun_esyalar.append(esya)\n                uygun_indeksler.append(indeks)\n                if len(uygun_esyalar) == 3:\n                    break\n\n        if len(uygun_esyalar) < 3:\n            return {\n                'oyuncu': self.isim,\n                'basarili': False,\n                'neden': 'Efsanevi eser üretmek için en az üç uygun eşya gerekli.',\n                'toplam_altin': self.altin,\n                'envanter_sayisi': len(self.envanter)\n            }\n\n        toplam_kaynak_degeri = 0\n        for esya in uygun_esyalar:\n            deger = esya.get('deger', esya.get('değer', 0))\n            if not isinstance(deger, (int, float)) or deger < 0:\n                deger = 0\n            toplam_kaynak_degeri += int(deger)\n\n        maliyet = max(30, self.seviye * 25 + toplam_kaynak_degeri // 2)\n\n        if self.altin < maliyet:\n            return {\n                'oyuncu': self.isim,\n                'basarili': False,\n                'neden': 'Efsanevi eser üretimi için yeterli altın bulunmuyor.',\n                'gereken_altin': maliyet,\n                'toplam_altin': self.altin,\n                'eksik_altin': maliyet - self.altin,\n                'kaynak_degeri': toplam_kaynak_degeri,\n                'envanter_sayisi': len(self.envanter)\n            }\n\n        eski_seviye = self.seviye\n        eski_xp = self.xp\n        eski_altin = self.altin\n\n        for indeks in reversed(uygun_indeksler):\n            self.envanter.pop(indeks)\n\n        self.altin -= maliyet\n        kazanilan_xp = self.seviye * 30 + toplam_kaynak_degeri // 3\n        self.xp += kazanilan_xp\n\n        while self.xp >= self.seviye * 100:\n            self.seviye += 1\n\n        eser_degeri = max(\n            60,\n            toplam_kaynak_degeri + self.seviye * 20 + maliyet // 2\n        )\n\n        efsanevi_eser = {\n            'ad': f'Efsanevi Eser {self.seviye}',\n            'seviye': self.seviye,\n            'deger': eser_degeri,\n            'kalite': 'efsanevi',\n            'kaynaklar': uygun_esyalar\n        }\n        self.envanter.append(efsanevi_eser)\n\n        return {\n            'oyuncu': self.isim,\n            'basarili': True,\n            'uretilen_eser': efsanevi_eser,\n            'kullanilan_kaynaklar': uygun_esyalar,\n            'harcanan_altin': maliyet,\n            'onceki_altin': eski_altin,\n            'toplam_altin': self.altin,\n            'kazanilan_xp': kazanilan_xp,\n            'onceki_xp': eski_xp,\n            'toplam_xp': self.xp,\n            'eski_seviye': eski_seviye,\n            'yeni_seviye': self.seviye,\n            'seviye_atlama_sayisi': self.seviye - eski_seviye,\n            'kaynak_degeri': toplam_kaynak_degeri,\n            'envanter_sayisi': len(self.envanter)\n        }"
-      },
       {
         "time": "2026-09-19 06:30:27 UTC",
         "attempt": 15,
@@ -96,6 +82,12 @@
       {
         "generation": 20,
         "summary": "Seviye atlamak artık saldırı gücünü artırıyor.",
+        "reason": "Deterministik kontrol kapılarından biri geçmedi.",
+        "status": "REJECTED"
+      },
+      {
+        "generation": 20,
+        "summary": "Seviye artık saldırı gücünü artırıyor.",
         "reason": "Deterministik kontrol kapılarından biri geçmedi.",
         "status": "REJECTED"
       }
