@@ -6,25 +6,11 @@
     "rules_version": 2,
     "last_event": {
       "generation": 20,
-      "summary": "Seviye atlamak artık saldırı gücünü artırıyor.",
+      "summary": "Seviye arttıkça oyuncunun saldırı gücü artık yükseliyor.",
       "reason": "Deterministik kontrol kapılarından biri geçmedi.",
       "status": "REJECTED"
     },
     "history_tail": [
-      {
-        "time": "2026-09-18 13:46:12 UTC",
-        "attempt": 10,
-        "generation": 15,
-        "previous_generation": 14,
-        "method": "hazine_avi",
-        "result": "accepted",
-        "reason": "Aday testleri geçti ve yeni özellik minimum kalite eşiğini geçti.",
-        "baseline_score": 92.61,
-        "candidate_score": 99.11,
-        "score_difference": 6.5,
-        "method_quality": 65,
-        "code": "def hazine_avi(self):\n    if not hasattr(self, 'altin'):\n        self.altin = 0\n    if not hasattr(self, 'hazine_avi_sayisi'):\n        self.hazine_avi_sayisi = 0\n\n    av_numarasi = self.hazine_avi_sayisi + 1\n    ekipman_degeri = 0\n\n    for esya in self.envanter:\n        if isinstance(esya, dict):\n            deger = esya.get('deger', esya.get('değer', 0))\n            if isinstance(deger, (int, float)) and deger > 0:\n                ekipman_degeri += int(deger)\n\n    kesif_gucu = self.seviye * 40 + min(ekipman_degeri, self.seviye * 60) + len(self.envanter) * 6\n    hazine_zorlugu = self.seviye * 32 + av_numarasi * 9\n    eski_seviye = self.seviye\n    eski_xp = self.xp\n    eski_altin = self.altin\n    self.hazine_avi_sayisi = av_numarasi\n\n    if kesif_gucu < hazine_zorlugu:\n        kaybedilen_xp = min(self.xp, self.seviye * 5)\n        self.xp -= kaybedilen_xp\n        return {\n            'oyuncu': self.isim,\n            'basarili': False,\n            'av_numarasi': av_numarasi,\n            'kesif_gucu': kesif_gucu,\n            'hazine_zorlugu': hazine_zorlugu,\n            'kaybedilen_xp': kaybedilen_xp,\n            'toplam_xp': self.xp,\n            'toplam_altin': self.altin,\n            'eski_seviye': eski_seviye,\n            'yeni_seviye': self.seviye,\n            'envanter_sayisi': len(self.envanter)\n        }\n\n    kazanilan_xp = self.seviye * 28 + min(ekipman_degeri, self.seviye * 50) // 2\n    kazanilan_altin = self.seviye * 22 + len(self.envanter) * 8\n    self.xp += kazanilan_xp\n    self.altin += kazanilan_altin\n\n    while self.xp >= self.seviye * 100:\n        self.seviye += 1\n\n    hazine = {\n        'ad': f'Kadim Hazine {av_numarasi}',\n        'seviye': self.seviye,\n        'deger': max(25, kazanilan_altin // 2 + self.seviye * 5),\n        'av_numarasi': av_numarasi\n    }\n    self.envanter.append(hazine)\n\n    return {\n        'oyuncu': self.isim,\n        'basarili': True,\n        'av_numarasi': av_numarasi,\n        'kesif_gucu': kesif_gucu,\n        'hazine_zorlugu': hazine_zorlugu,\n        'kazanilan_xp': kazanilan_xp,\n        'toplam_xp': self.xp,\n        'kazanilan_altin': kazanilan_altin,\n        'toplam_altin': self.altin,\n        'eski_seviye': eski_seviye,\n        'yeni_seviye': self.seviye,\n        'seviye_atlama_sayisi': self.seviye - eski_seviye,\n        'hazine': hazine,\n        'envanter_sayisi': len(self.envanter),\n        'onceki_xp': eski_xp,\n        'onceki_altin': eski_altin\n    }"
-      },
       {
         "time": "2026-09-18 17:38:22 UTC",
         "attempt": 11,
@@ -128,6 +114,12 @@
       {
         "generation": 20,
         "summary": "Seviye atlamak artık saldırı gücünü artırıyor.",
+        "reason": "Deterministik kontrol kapılarından biri geçmedi.",
+        "status": "REJECTED"
+      },
+      {
+        "generation": 20,
+        "summary": "Seviye arttıkça oyuncunun saldırı gücü artık yükseliyor.",
         "reason": "Deterministik kontrol kapılarından biri geçmedi.",
         "status": "REJECTED"
       }
