@@ -6,25 +6,11 @@
     "rules_version": 2,
     "last_event": {
       "generation": 20,
-      "summary": "Seviye ilerlemesi artık saldırı gücünü artırıyor.",
+      "summary": "Seviye atlayan oyuncunun saldırı gücü artık artıyor.",
       "reason": "Deterministik kontrol kapılarından biri geçmedi.",
       "status": "REJECTED"
     },
     "history_tail": [
-      {
-        "time": "2026-09-18 20:49:28 UTC",
-        "attempt": 12,
-        "generation": 17,
-        "previous_generation": 16,
-        "method": "yetenek_ustaligi",
-        "result": "accepted",
-        "reason": "Aday testleri geçti ve yeni özellik minimum kalite eşiğini geçti.",
-        "baseline_score": 91.84,
-        "candidate_score": 98.34,
-        "score_difference": 6.5,
-        "method_quality": 65,
-        "code": "def yetenek_ustaligi(self):\n    if not hasattr(self, 'altin'):\n        self.altin = 0\n    if not hasattr(self, 'yetenek_ustaligi_sayisi'):\n        self.yetenek_ustaligi_sayisi = 0\n    if not hasattr(self, 'yetenek_puanlari'):\n        self.yetenek_puanlari = 0\n    if not hasattr(self, 'yetenekler'):\n        self.yetenekler = []\n\n    mevcut_ustalik = self.yetenek_ustaligi_sayisi\n    maliyet = self.seviye * 20 + mevcut_ustalik * 15\n\n    if self.altin < maliyet:\n        return {\n            'oyuncu': self.isim,\n            'basarili': False,\n            'neden': 'Yetenek eğitimi için yeterli altın bulunmuyor.',\n            'gereken_altin': maliyet,\n            'toplam_altin': self.altin,\n            'eksik_altin': maliyet - self.altin,\n            'ustalik_seviyesi': mevcut_ustalik,\n            'yetenek_sayisi': len(self.yetenekler)\n        }\n\n    eski_seviye = self.seviye\n    eski_xp = self.xp\n    eski_altin = self.altin\n\n    self.altin -= maliyet\n    self.yetenek_ustaligi_sayisi += 1\n\n    kazanilan_xp = self.seviye * 18 + mevcut_ustalik * 10\n    kazanilan_puan = 1 + self.seviye // 5\n\n    self.xp += kazanilan_xp\n    self.yetenek_puanlari += kazanilan_puan\n\n    while self.xp >= self.seviye * 100:\n        self.seviye += 1\n\n    yetenek_adlari = [\n        'Çelik İrade',\n        'Hızlı Refleks',\n        'Kritik Darbe',\n        'Savaş Sezgisi',\n        'Efsanevi Dayanıklılık'\n    ]\n    yetenek_adi = yetenek_adlari[mevcut_ustalik % len(yetenek_adlari)]\n\n    yetenek = {\n        'ad': yetenek_adi,\n        'kademe': mevcut_ustalik + 1,\n        'puan': kazanilan_puan,\n        'acilma_seviyesi': self.seviye\n    }\n    self.yetenekler.append(yetenek)\n\n    return {\n        'oyuncu': self.isim,\n        'basarili': True,\n        'egitim_numarasi': self.yetenek_ustaligi_sayisi,\n        'egitilen_yetenek': yetenek,\n        'harcanan_altin': maliyet,\n        'onceki_altin': eski_altin,\n        'toplam_altin': self.altin,\n        'kazanilan_xp': kazanilan_xp,\n        'onceki_xp': eski_xp,\n        'toplam_xp': self.xp,\n        'kazanilan_yetenek_puani': kazanilan_puan,\n        'toplam_yetenek_puani': self.yetenek_puanlari,\n        'eski_seviye': eski_seviye,\n        'yeni_seviye': self.seviye,\n        'seviye_atlama_sayisi': self.seviye - eski_seviye,\n        'ustalik_seviyesi': self.yetenek_ustaligi_sayisi,\n        'yetenek_sayisi': len(self.yetenekler)\n    }"
-      },
       {
         "time": "2026-09-18 23:12:08 UTC",
         "attempt": 13,
@@ -112,6 +98,12 @@
       {
         "generation": 20,
         "summary": "Seviye ilerlemesi artık saldırı gücünü artırıyor.",
+        "reason": "Deterministik kontrol kapılarından biri geçmedi.",
+        "status": "REJECTED"
+      },
+      {
+        "generation": 20,
+        "summary": "Seviye atlayan oyuncunun saldırı gücü artık artıyor.",
         "reason": "Deterministik kontrol kapılarından biri geçmedi.",
         "status": "REJECTED"
       }
