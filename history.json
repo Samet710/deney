@@ -276,5 +276,11 @@
     "summary": "Seviye yükseldikçe oyuncunun saldırı gücü artar.",
     "reason": "Deterministik kontrol kapılarından biri geçmedi.",
     "status": "REJECTED"
+  },
+  {
+    "generation": 20,
+    "summary": "Seviye atlayan oyuncunun saldırısı her seviyede güçleniyor.",
+    "reason": "Deterministik kontrol kapılarından biri geçmedi.",
+    "status": "REJECTED"
   }
 ]

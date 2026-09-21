@@ -6,17 +6,11 @@
     "rules_version": 2,
     "last_event": {
       "generation": 20,
-      "summary": "Seviye yükseldikçe oyuncunun saldırı gücü artar.",
+      "summary": "Seviye atlayan oyuncunun saldırısı her seviyede güçleniyor.",
       "reason": "Deterministik kontrol kapılarından biri geçmedi.",
       "status": "REJECTED"
     },
     "history_tail": [
-      {
-        "generation": 20,
-        "summary": "Enerji tüketimi yüksek ama güçlü bir Güçlü Saldırı aksiyonu eklendi.",
-        "reason": "Deterministik kontrol kapılarından biri geçmedi.",
-        "status": "REJECTED"
-      },
       {
         "generation": 20,
         "summary": "Seviye artık savaş gücünü artırıyor: her seviye saldırıya +1 temel hasar ekliyor.",
@@ -80,6 +74,12 @@
       {
         "generation": 20,
         "summary": "Seviye yükseldikçe oyuncunun saldırı gücü artar.",
+        "reason": "Deterministik kontrol kapılarından biri geçmedi.",
+        "status": "REJECTED"
+      },
+      {
+        "generation": 20,
+        "summary": "Seviye atlayan oyuncunun saldırısı her seviyede güçleniyor.",
         "reason": "Deterministik kontrol kapılarından biri geçmedi.",
         "status": "REJECTED"
       }
