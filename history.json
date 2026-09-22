@@ -282,5 +282,11 @@
     "summary": "Seviye atlayan oyuncunun saldırısı her seviyede güçleniyor.",
     "reason": "Deterministik kontrol kapılarından biri geçmedi.",
     "status": "REJECTED"
+  },
+  {
+    "generation": 20,
+    "summary": "Seviye atlama artık oyuncuya anında iyileşme ve tam enerji kazandırıyor.",
+    "reason": "Deterministik kontrol kapılarından biri geçmedi.",
+    "status": "REJECTED"
   }
 ]
