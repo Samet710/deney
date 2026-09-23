@@ -1,1 +1,78 @@
+name: Otonom Evrim
 
+on:
+  workflow_dispatch:
+  schedule:
+    # 30 dakikada bir = günde 48 Mavi çağrısı.
+    # OpenRouter ücretsiz katmanındaki günlük isteklere yaklaşır; manuel
+    # çalıştırmalar ek çağrı tüketebilir.
+    - cron: "*/30 * * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: autonom-evolution
+  cancel-in-progress: false
+
+jobs:
+  evolve:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install OpenAI-compatible SDK
+        run: python -m pip install --upgrade openai
+
+      - name: Verify current Yellow build
+        run: |
+          python -m py_compile mavi.py kirmizi.py sari_sistem.py test_sari.py
+          python test_sari.py
+
+      - name: Blue proposes one playable gameplay evolution
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          OPENROUTER_MODEL: ${{ vars.OPENROUTER_MODEL || 'cohere/north-mini-code:free' }}
+        run: python mavi.py
+
+      - name: Red independently validates the actual gameplay
+        run: python kirmizi.py
+
+      - name: Export the exact promoted Yellow build
+        run: python sari_sistem.py --export-web
+
+      - name: Remove ephemeral proposal files
+        run: rm -f mavi_aday.json kirmizi_sonuc.json
+
+      - name: Commit the new state
+        run: |
+          git config user.name "Autonom-Mavi-Kirmizi"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add \
+            sari_sistem.py \
+            mavi.py \
+            kirmizi.py \
+            test_sari.py \
+            history.json \
+            counter.txt \
+            docs/data.json \
+            .github/workflows/otonom_dene.yml
+
+          if git diff --cached --quiet; then
+            echo "No repository changes."
+            exit 0
+          fi
+
+          git commit -m "autonom: use free OpenRouter model for Mavi"
+          git push
