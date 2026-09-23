@@ -1,0 +1,518 @@
+from __future__ import annotations
+
+import argparse
+import json
+import math
+from dataclasses import asdict, dataclass, field
+from pathlib import Path
+from typing import Any
+
+ROOT = Path(__file__).resolve().parent
+DOCS = ROOT / "docs"
+DATA_FILE = DOCS / "data.json"
+COUNTER_FILE = ROOT / "counter.txt"
+HISTORY_FILE = ROOT / "history.json"
+
+TITLE = "YELLOW // MICRO DUNGEON"
+HISTORY_SCHEMA = 2
+GAME_CONTRACT_VERSION = 2
+
+GAME_CONFIG: dict[str, Any] = {
+    "title": TITLE,
+    "subtitle": "A tiny turn-based dungeon that the autonomous loop can evolve.",
+    "rules_version": 3,
+    "game_contract_version": GAME_CONTRACT_VERSION,
+    "autonomy": {
+        "history_schema": HISTORY_SCHEMA,
+        "browser_effects": ["damage", "heal", "shield", "energy"],
+        "evolution_rule": "A feature must be reachable through the exported gameplay contract.",
+    },
+    "player": {
+        "max_hp": 100,
+        "max_energy": 6,
+        "starting_gold": 12,
+        "base_attack": 12,
+        "base_defense": 2,
+        "crit_chance": 0.10,
+        "crit_multiplier": 1.75,
+    },
+    "progression": {
+        "xp_per_win": 35,
+        "xp_per_loss": 8,
+        "xp_to_level": 100,
+        "gold_per_win": 9,
+        "heal_after_battle": 18,
+    },
+    "actions": [
+        {
+            "id": "attack",
+            "name": "Saldır",
+            "description": "Normal saldırı. Kritik vuruş ihtimali vardır.",
+            "energy": 2,
+            "effects": [{"type": "damage", "amount": 1.0}],
+        },
+        {
+            "id": "guard",
+            "name": "Savun",
+            "description": "Güçlü bir kalkan oluşturur ve enerji kazandırır.",
+            "energy": 0,
+            "effects": [
+                {"type": "shield", "amount": 12},
+                {"type": "energy", "amount": 1},
+            ],
+        },
+        {
+            "id": "heal",
+            "name": "İyileş",
+            "description": "Enerji harcayarak can yeniler.",
+            "energy": 3,
+            "effects": [{"type": "heal", "amount": 20}],
+        },
+    ],
+    "enemies": [
+        {
+            "id": "slime",
+            "name": "Neon Slime",
+            "hp": 54,
+            "attack": 8,
+            "defense": 1,
+            "gold": 6,
+            "xp": 24,
+        },
+        {
+            "id": "drone",
+            "name": "Rust Drone",
+            "hp": 72,
+            "attack": 11,
+            "defense": 2,
+            "gold": 9,
+            "xp": 32,
+        },
+        {
+            "id": "warden",
+            "name": "Archive Warden",
+            "hp": 92,
+            "attack": 14,
+            "defense": 3,
+            "gold": 13,
+            "xp": 44,
+        },
+    ],
+    "shop": {
+        "potion_cost": 8,
+        "potion_heal": 24,
+    },
+}
+
+
+@dataclass
+class Player:
+    hp: int
+    energy: int
+    gold: int
+    xp: int = 0
+    level: int = 1
+    inventory: list[str] = field(default_factory=list)
+
+
+Oyuncu = Player
+
+
+@dataclass
+class Battle:
+    enemy: dict[str, Any]
+    enemy_hp: int
+    shield: int = 0
+    turn: int = 1
+    log: list[str] = field(default_factory=list)
+    ended: bool = False
+    result: str | None = None
+
+
+class Game:
+    def __init__(self, config: dict[str, Any] | None = None):
+        self.config = config if config is not None else GAME_CONFIG
+        p = self.config["player"]
+        self.player = Player(
+            hp=int(p["max_hp"]),
+            energy=int(p["max_energy"]),
+            gold=int(p["starting_gold"]),
+        )
+        self.battle: Battle | None = None
+
+    def _enemy_for_seed(self, seed: int = 0) -> dict[str, Any]:
+        enemies = self.config["enemies"]
+        if not enemies:
+            raise ValueError("enemies cannot be empty")
+        return dict(enemies[int(seed) % len(enemies)])
+
+    def start_battle(self, seed: int = 0) -> dict[str, Any]:
+        enemy = self._enemy_for_seed(seed)
+        self.battle = Battle(
+            enemy=enemy,
+            enemy_hp=int(enemy["hp"]),
+            log=[f"{enemy['name']} ortaya çıktı."],
+        )
+        return self.snapshot()
+
+    def available_actions(self) -> list[dict[str, Any]]:
+        return [dict(action) for action in self.config.get("actions", [])]
+
+    def _find_action(self, action_id: str) -> dict[str, Any]:
+        for action in self.config["actions"]:
+            if action["id"] == action_id:
+                return action
+        raise ValueError(f"unknown action: {action_id}")
+
+    def _gain_xp(self, amount: int) -> None:
+        progression = self.config["progression"]
+        self.player.xp += max(0, int(amount))
+        threshold = max(1, int(progression["xp_to_level"]))
+        while self.player.xp >= threshold:
+            self.player.xp -= threshold
+            self.player.level += 1
+
+    def _enemy_turn(self) -> None:
+        assert self.battle is not None
+        p = self.config["player"]
+        raw_damage = max(
+            0,
+            int(self.battle.enemy.get("attack", 0)) - int(p["base_defense"]),
+        )
+        blocked = min(raw_damage, max(0, self.battle.shield))
+        damage = raw_damage - blocked
+        self.battle.shield -= blocked
+        self.player.hp = max(0, self.player.hp - damage)
+
+        if blocked:
+            self.battle.log.append(
+                f"{self.battle.enemy['name']} vurdu: {damage} hasar, {blocked} engellendi."
+            )
+        else:
+            self.battle.log.append(
+                f"{self.battle.enemy['name']} vurdu: {damage} hasar."
+            )
+
+        self.player.energy = min(
+            int(p["max_energy"]),
+            self.player.energy + 1,
+        )
+
+        if self.player.hp <= 0:
+            self.battle.ended = True
+            self.battle.result = "loss"
+            self._gain_xp(int(self.config["progression"]["xp_per_loss"]))
+
+    def act(self, action_id: str, roll: float = 0.5) -> dict[str, Any]:
+        if self.battle is None:
+            raise RuntimeError("battle not started")
+        if self.battle.ended:
+            return self.snapshot()
+
+        action = self._find_action(action_id)
+        cost = int(action.get("energy", 0))
+        if self.player.energy < cost:
+            self.battle.log.append("Yeterli enerji yok.")
+            return self.snapshot()
+
+        self.player.energy -= cost
+        self._apply_effects(action.get("effects", []), float(roll))
+
+        if self.battle.enemy_hp <= 0:
+            self._win_battle()
+            return self.snapshot()
+
+        self._enemy_turn()
+        self.battle.turn += 1
+        return self.snapshot()
+
+    def _apply_effects(self, effects: list[dict[str, Any]], roll: float) -> None:
+        assert self.battle is not None
+        p = self.config["player"]
+
+        for effect in effects:
+            kind = effect.get("type")
+            amount = effect.get("amount", 0)
+
+            if kind == "damage":
+                raw = float(p["base_attack"]) * float(amount)
+                crit_chance = float(p.get("crit_chance", 0.0))
+                crit_multiplier = float(p.get("crit_multiplier", 1.0))
+                critical = float(roll) < crit_chance
+                if critical:
+                    raw *= crit_multiplier
+
+                defense = int(self.battle.enemy.get("defense", 0))
+                damage = max(1, int(math.floor(raw)) - defense)
+                self.battle.enemy_hp = max(0, self.battle.enemy_hp - damage)
+
+                marker = " KRİTİK!" if critical else ""
+                self.battle.log.append(f"Saldırı: {damage} hasar.{marker}")
+
+            elif kind == "heal":
+                before = self.player.hp
+                max_hp = int(p["max_hp"])
+                self.player.hp = min(max_hp, self.player.hp + max(0, int(amount)))
+                healed = self.player.hp - before
+                self.battle.log.append(f"+{healed} can.")
+
+            elif kind == "shield":
+                shield = max(0, int(amount))
+                self.battle.shield += shield
+                self.battle.log.append(f"Kalkan +{shield}.")
+
+            elif kind == "energy":
+                before = self.player.energy
+                max_energy = int(p["max_energy"])
+                self.player.energy = min(
+                    max_energy,
+                    max(0, self.player.energy + int(amount)),
+                )
+                gained = self.player.energy - before
+                self.battle.log.append(f"Enerji {gained:+d}.")
+
+            else:
+                raise ValueError(f"unsupported effect type: {kind}")
+
+    def _win_battle(self) -> None:
+        assert self.battle is not None
+        progression = self.config["progression"]
+        enemy = self.battle.enemy
+        xp = int(enemy.get("xp", progression["xp_per_win"]))
+        gold = int(enemy.get("gold", progression["gold_per_win"]))
+
+        self._gain_xp(xp)
+        self.player.gold += gold
+        self.player.hp = min(
+            int(self.config["player"]["max_hp"]),
+            self.player.hp + int(progression["heal_after_battle"]),
+        )
+        self.battle.ended = True
+        self.battle.result = "win"
+        self.battle.log.append(f"Kazandın: +{xp} XP, +{gold} altın.")
+
+    def buy_potion(self) -> bool:
+        shop = self.config["shop"]
+        cost = int(shop["potion_cost"])
+        heal = int(shop["potion_heal"])
+        max_hp = int(self.config["player"]["max_hp"])
+
+        if self.player.gold < cost or self.player.hp >= max_hp:
+            return False
+
+        self.player.gold -= cost
+        self.player.hp = min(max_hp, self.player.hp + heal)
+        self.player.inventory.append("potion")
+        return True
+
+    def snapshot(self) -> dict[str, Any]:
+        battle = None
+        if self.battle is not None:
+            battle = {
+                "enemy": self.battle.enemy,
+                "enemy_hp": self.battle.enemy_hp,
+                "shield": self.battle.shield,
+                "turn": self.battle.turn,
+                "log": self.battle.log[-8:],
+                "ended": self.battle.ended,
+                "result": self.battle.result,
+            }
+        return {
+            "player": asdict(self.player),
+            "battle": battle,
+        }
+
+
+def read_generation() -> int:
+    try:
+        return max(0, int(COUNTER_FILE.read_text(encoding="utf-8").strip()))
+    except (FileNotFoundError, ValueError):
+        return 0
+
+
+def write_generation(value: int) -> None:
+    COUNTER_FILE.write_text(
+        str(max(0, int(value))) + "\n",
+        encoding="utf-8",
+    )
+
+
+def load_history() -> list[dict[str, Any]]:
+    try:
+        value = json.loads(HISTORY_FILE.read_text(encoding="utf-8"))
+        if not isinstance(value, list):
+            return []
+    except (FileNotFoundError, json.JSONDecodeError):
+        return []
+
+    # Old history from the previous architecture stays on disk but is not
+    # presented as current autonomous progress.
+    return [
+        event
+        for event in value
+        if isinstance(event, dict)
+        and int(event.get("schema", 0)) == HISTORY_SCHEMA
+    ]
+
+
+def load_all_history() -> list[dict[str, Any]]:
+    try:
+        value = json.loads(HISTORY_FILE.read_text(encoding="utf-8"))
+        return value if isinstance(value, list) else []
+    except (FileNotFoundError, json.JSONDecodeError):
+        return []
+
+
+def append_history(event: dict[str, Any]) -> None:
+    history = load_all_history()
+    history.append(event)
+    HISTORY_FILE.write_text(
+        json.dumps(history[-100:], ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+
+
+def self_test() -> dict[str, Any]:
+    checks: list[str] = []
+
+    game = Game(GAME_CONFIG)
+    game.start_battle(seed=0)
+    before_enemy = game.battle.enemy_hp
+    game.act("attack", roll=0.99)
+    assert game.battle.enemy_hp < before_enemy
+    checks.append("battle starts and attack damages enemy")
+
+    game2 = Game(GAME_CONFIG)
+    game2.start_battle(seed=0)
+    game2.player.hp = 50
+    before_hp = game2.player.hp
+    game2.act("heal", roll=0.99)
+    assert game2.player.hp > before_hp
+    assert game2.player.hp <= GAME_CONFIG["player"]["max_hp"]
+    checks.append("heal restores hp")
+
+    normal = Game(GAME_CONFIG)
+    normal.start_battle(seed=1)
+    normal.battle.enemy["attack"] = 11
+    normal_before = normal.player.hp
+    normal.act("attack", roll=0.99)
+    normal_damage = normal_before - normal.player.hp
+
+    guarded = Game(GAME_CONFIG)
+    guarded.start_battle(seed=1)
+    guarded.battle.enemy["attack"] = 11
+    shield_before = guarded.battle.shield
+    guarded_before = guarded.player.hp
+    guarded.act("guard", roll=0.99)
+    guarded_damage = guarded_before - guarded.player.hp
+
+    assert guarded.battle.shield > shield_before
+    assert normal_damage > 0
+    assert guarded_damage < normal_damage
+    checks.append("guard creates a real shield and reduces damage")
+
+    win = Game(GAME_CONFIG)
+    win.start_battle(seed=0)
+    win.battle.enemy["attack"] = 0
+    win.battle.enemy["defense"] = 0
+    win.battle.enemy_hp = 1
+    win.player.energy = 6
+    xp_before = win.player.xp
+    gold_before = win.player.gold
+    win.act("attack", roll=0.99)
+    assert win.battle.result == "win"
+    assert win.player.xp > xp_before
+    assert win.player.gold > gold_before
+    checks.append("win grants progression rewards")
+
+    loss = Game(GAME_CONFIG)
+    loss.start_battle(seed=0)
+    loss.battle.enemy["attack"] = 99
+    loss.player.hp = 1
+    loss.act("attack", roll=0.99)
+    assert loss.battle.result == "loss"
+    checks.append("loss state is reachable")
+
+    shop = Game(GAME_CONFIG)
+    shop.start_battle(seed=0)
+    shop.player.hp = 50
+    old_gold = shop.player.gold
+    assert shop.buy_potion() is True
+    assert shop.player.gold < old_gold
+    assert shop.player.hp > 50
+    checks.append("shop potion changes real state")
+
+    seen_ids: set[str] = set()
+    for action in GAME_CONFIG["actions"]:
+        assert isinstance(action, dict)
+        action_id = action.get("id")
+        assert isinstance(action_id, str) and action_id
+        assert action_id not in seen_ids
+        seen_ids.add(action_id)
+
+        effects = action.get("effects", [])
+        assert isinstance(effects, list) and effects
+        assert any(
+            effect.get("type") in GAME_CONFIG["autonomy"]["browser_effects"]
+            and isinstance(effect.get("amount"), (int, float))
+            and not isinstance(effect.get("amount"), bool)
+            and float(effect.get("amount")) > 0
+            for effect in effects
+            if isinstance(effect, dict)
+        )
+    checks.append("every action has a browser-executable positive effect")
+
+    return {"ok": True, "checks": checks}
+
+
+def public_config() -> dict[str, Any]:
+    return json.loads(json.dumps(GAME_CONFIG))
+
+
+def export_web() -> None:
+    DOCS.mkdir(parents=True, exist_ok=True)
+    smoke = self_test()
+    history = load_history()
+
+    payload = {
+        "system": {
+            "title": TITLE,
+            "generation": read_generation(),
+            "status": "LIVE",
+            "rules_version": GAME_CONFIG["rules_version"],
+            "game_contract_version": GAME_CONTRACT_VERSION,
+            "history_schema": HISTORY_SCHEMA,
+            "history_count": len(history),
+            "last_event": history[-1] if history else None,
+            "history_tail": history[-12:],
+        },
+        "game": public_config(),
+        "smoke_test": smoke,
+    }
+
+    DATA_FILE.write_text(
+        json.dumps(payload, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--export-web", action="store_true")
+    parser.add_argument("--self-test", action="store_true")
+    args = parser.parse_args()
+
+    if args.self_test:
+        print(json.dumps(self_test(), ensure_ascii=False))
+        return
+
+    if args.export_web:
+        export_web()
+        print(f"web export: {DATA_FILE}")
+        return
+
+    parser.error("use --export-web or --self-test")
+
+
+if __name__ == "__main__":
+    main()
