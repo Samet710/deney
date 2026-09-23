@@ -6,34 +6,53 @@ const state = {
 
 async function loadData() {
   const response = await fetch("data.json?ts=" + Date.now());
-  if (!response.ok) throw new Error("data.json yüklenemedi");
+
+  if (!response.ok) {
+    throw new Error("data.json yüklenemedi");
+  }
+
   state.data = await response.json();
+
   renderDevelopment();
   startNewRun();
 }
 
 function setupTabs() {
   document.querySelectorAll(".tab").forEach((button) => {
-    button.addEventListener("click", () => switchTab(button.dataset.tab));
+    button.addEventListener("click", () => {
+      switchTab(button.dataset.tab);
+    });
   });
 }
 
 function switchTab(tab) {
   state.tab = tab;
 
-  document.querySelectorAll(".tab").forEach((button) =>
-    button.classList.toggle("active", button.dataset.tab === tab)
-  );
+  document
+    .querySelectorAll(".tab")
+    .forEach((button) => {
+      button.classList.toggle(
+        "active",
+        button.dataset.tab === tab
+      );
+    });
 
-  document.querySelectorAll(".tab-panel").forEach((panel) =>
-    panel.classList.toggle("active", panel.id === tab)
-  );
+  document
+    .querySelectorAll(".tab-panel")
+    .forEach((panel) => {
+      panel.classList.toggle(
+        "active",
+        panel.id === tab
+      );
+    });
 }
 
 function renderDevelopment() {
   const system = state.data.system;
 
-  document.getElementById("generation").textContent = system.generation;
+  document.getElementById("generation").textContent =
+    system.generation;
+
   document.getElementById("generationPill").textContent =
     `GEN ${system.generation}`;
 
@@ -46,53 +65,85 @@ function renderDevelopment() {
   document.getElementById("smokeStatus").textContent =
     state.data.smoke_test?.ok ? "OK" : "FAIL";
 
+  const history = [...(system.history_tail || [])].reverse();
+
+  const historyTag = document.querySelector(
+    ".history-card .mini-tag"
+  );
+
+  if (historyTag) {
+    historyTag.textContent =
+      `${system.history_count ?? history.length} kayıt`;
+  }
+
   const last = system.last_event;
   const eventBox = document.getElementById("lastEvent");
 
-  eventBox.textContent = last
-    ? `GEN ${last.generation}
-${last.summary || "Değişiklik"}
+  if (!last) {
+    eventBox.textContent = "Henüz gelişme yok.";
+  } else {
+    const status =
+      last.status === "REJECTED"
+        ? "REDDEDİLDİ"
+        : "KABUL EDİLDİ";
 
-${last.reason || ""}`
-    : "Henüz kabul edilmiş bir nesil yok.";
+    eventBox.textContent =
+      `GEN ${last.generation ?? system.generation} • ${status}\n` +
+      `${last.summary || "Değişiklik"}\n\n` +
+      `${last.reason || ""}`;
+  }
 
   const list = document.getElementById("history");
-  const history = [...(system.history_tail || [])].reverse();
 
-  list.innerHTML = history.length
-    ? history
-        .map(
-          (item) => `
-      <div class="history-item">
-        <div class="history-gen">
-          GEN ${item.generation ?? "—"}
-        </div>
+  if (history.length) {
+    list.innerHTML = history
+      .map(
+        (item) => `
+          <div class="history-item">
+            <div class="history-gen">
+              GEN ${item.generation ?? "—"}
+            </div>
 
-        <div class="history-main">
-          <strong>
-            ${escapeHtml(item.summary || item.status || "Olay")}
-          </strong>
+            <div class="history-main">
+              <strong>
+                ${escapeHtml(
+                  item.summary || item.status || "Olay"
+                )}
+              </strong>
 
-          <span>
-            ${escapeHtml(item.reason || "")}
-          </span>
-        </div>
-      </div>
-    `
-        )
-        .join("")
-    : '<div class="muted">Geçmiş boş.</div>';
+              <span>
+                ${escapeHtml(item.reason || "")}
+              </span>
+            </div>
+          </div>
+        `
+      )
+      .join("");
+  } else {
+    list.innerHTML =
+      '<div class="muted">Geçmiş boş.</div>';
+  }
 }
 
 function startNewRun() {
   const cfg = state.data.game;
+
+  if (
+    !Array.isArray(cfg.enemies) ||
+    cfg.enemies.length === 0
+  ) {
+    throw new Error(
+      "Oyunda düşman tanımlı değil."
+    );
+  }
+
   const firstEnemy = cfg.enemies[0];
 
   state.game = {
     player: {
-      hp: cfg.player.max_hp,
-      energy: cfg.player.max_energy,
-      gold: cfg.player.starting_gold,
+      hp: Number(cfg.player.max_hp),
+      energy: Number(cfg.player.max_energy),
+      gold: Number(cfg.player.starting_gold),
       xp: 0,
       level: 1,
       inventory: []
@@ -100,10 +151,12 @@ function startNewRun() {
 
     battle: {
       enemy: { ...firstEnemy },
-      enemyHp: firstEnemy.hp,
+      enemyHp: Number(firstEnemy.hp),
       shield: 0,
       turn: 1,
-      log: [`${firstEnemy.name} ortaya çıktı.`],
+      log: [
+        `${firstEnemy.name} ortaya çıktı.`
+      ],
       ended: false,
       result: null
     },
@@ -118,16 +171,25 @@ function act(actionId) {
   const cfg = state.data.game;
   const g = state.game;
 
-  if (!g || g.battle.ended) return;
+  if (!g || g.battle.ended) {
+    return;
+  }
 
-  const action = cfg.actions.find((a) => a.id === actionId);
+  const action = cfg.actions.find(
+    (item) => item.id === actionId
+  );
 
-  if (!action) return;
+  if (!action) {
+    return;
+  }
 
   const cost = Number(action.energy || 0);
 
   if (g.player.energy < cost) {
-    g.battle.log.push("Yeterli enerji yok.");
+    g.battle.log.push(
+      "Yeterli enerji yok."
+    );
+
     renderGame();
     return;
   }
@@ -152,85 +214,119 @@ function act(actionId) {
 function applyEffects(effects) {
   const cfg = state.data.game;
   const g = state.game;
+
   const roll = Math.random();
 
   for (const effect of effects) {
-    const amount = Number(effect.amount || 0);
+    const amount = Number(
+      effect.amount || 0
+    );
 
     if (effect.type === "damage") {
-      let raw = Number(cfg.player.base_attack) * amount;
+      let raw =
+        Number(cfg.player.base_attack) *
+        amount;
 
       const critical =
-        roll < Number(cfg.player.crit_chance || 0);
+        roll <
+        Number(
+          cfg.player.crit_chance || 0
+        );
 
       if (critical) {
-        raw *= Number(cfg.player.crit_multiplier || 1);
+        raw *= Number(
+          cfg.player.crit_multiplier || 1
+        );
       }
 
       const damage = Math.max(
         1,
         Math.floor(raw) -
-          Number(g.battle.enemy.defense || 0)
+          Number(
+            g.battle.enemy.defense || 0
+          )
       );
 
-      g.battle.enemyHp = Math.max(
-        0,
-        g.battle.enemyHp - damage
-      );
+      g.battle.enemyHp =
+        Math.max(
+          0,
+          g.battle.enemyHp - damage
+        );
 
       g.battle.log.push(
         `Saldırı: ${damage} hasar.${
           critical ? " KRİTİK!" : ""
         }`
       );
-    }
 
-    else if (effect.type === "heal") {
+    } else if (
+      effect.type === "heal"
+    ) {
       const amountInt = Math.max(
         0,
         Math.floor(amount)
       );
 
-      const oldHp = g.player.hp;
+      const oldHp =
+        g.player.hp;
 
-      g.player.hp = Math.min(
-        Number(cfg.player.max_hp),
-        g.player.hp + amountInt
-      );
+      g.player.hp =
+        Math.min(
+          Number(
+            cfg.player.max_hp
+          ),
+          g.player.hp + amountInt
+        );
 
       g.battle.log.push(
         `+${g.player.hp - oldHp} can.`
       );
-    }
 
-    else if (effect.type === "shield") {
-      g.battle.shield += Math.max(
+    } else if (
+      effect.type === "shield"
+    ) {
+      const shield = Math.max(
         0,
         Math.floor(amount)
       );
 
-      g.battle.log.push(
-        `Kalkan +${Math.floor(amount)}.`
-      );
-    }
+      g.battle.shield += shield;
 
-    else if (effect.type === "energy") {
-      g.player.energy = Math.min(
-        Number(cfg.player.max_energy),
-        Math.max(
-          0,
-          g.player.energy + Math.floor(amount)
-        )
+      g.battle.log.push(
+        `Kalkan +${shield}.`
       );
+
+    } else if (
+      effect.type === "energy"
+    ) {
+      const oldEnergy =
+        g.player.energy;
+
+      g.player.energy =
+        Math.min(
+          Number(
+            cfg.player.max_energy
+          ),
+          Math.max(
+            0,
+            g.player.energy +
+              Math.floor(amount)
+          )
+        );
+
+      const difference =
+        g.player.energy -
+        oldEnergy;
 
       g.battle.log.push(
         `Enerji ${
-          amount >= 0 ? "+" : ""
-        }${Math.floor(amount)}.`
+          difference >= 0 ? "+" : ""
+        }${difference}.`
       );
     }
   }
 }
+
 function enemyTurn() {
   const cfg = state.data.game;
   const g = state.game;
@@ -246,32 +342,46 @@ function enemyTurn() {
     g.battle.shield
   );
 
-  const damage = raw - blocked;
+  const damage =
+    raw - blocked;
 
   g.battle.shield -= blocked;
 
-  g.player.hp = Math.max(
-    0,
-    g.player.hp - damage
-  );
+  g.player.hp =
+    Math.max(
+      0,
+      g.player.hp - damage
+    );
 
-  g.player.energy = Math.min(
-    Number(cfg.player.max_energy),
-    g.player.energy + 1
-  );
+  g.player.energy =
+    Math.min(
+      Number(
+        cfg.player.max_energy
+      ),
+      g.player.energy + 1
+    );
 
-  g.battle.log.push(
-    blocked
-      ? `${g.battle.enemy.name} vurdu: ${damage} hasar, ${blocked} engellendi.`
-      : `${g.battle.enemy.name} vurdu: ${damage} hasar.`
-  );
+  if (blocked) {
+    g.battle.log.push(
+      `${g.battle.enemy.name} vurdu: ` +
+      `${damage} hasar, ` +
+      `${blocked} engellendi.`
+    );
+  } else {
+    g.battle.log.push(
+      `${g.battle.enemy.name} vurdu: ` +
+      `${damage} hasar.`
+    );
+  }
 
   if (g.player.hp <= 0) {
     g.battle.ended = true;
     g.battle.result = "loss";
 
     gainXp(
-      Number(cfg.progression.xp_per_loss)
+      Number(
+        cfg.progression.xp_per_loss
+      )
     );
 
     g.battle.log.push(
@@ -298,11 +408,16 @@ function winBattle() {
 
   g.player.gold += gold;
 
-  g.player.hp = Math.min(
-    Number(cfg.player.max_hp),
-    g.player.hp +
-      Number(cfg.progression.heal_after_battle)
-  );
+  g.player.hp =
+    Math.min(
+      Number(
+        cfg.player.max_hp
+      ),
+      g.player.hp +
+        Number(
+          cfg.progression.heal_after_battle
+        )
+    );
 
   g.battle.ended = true;
   g.battle.result = "win";
@@ -316,20 +431,26 @@ function gainXp(amount) {
   const threshold = Math.max(
     1,
     Number(
-      state.data.game.progression.xp_to_level
+      state.data.game.progression
+        .xp_to_level
     )
   );
 
-  state.game.player.xp += Math.max(
-    0,
-    Math.floor(amount)
-  );
+  state.game.player.xp +=
+    Math.max(
+      0,
+      Math.floor(amount)
+    );
 
   while (
-    state.game.player.xp >= threshold
+    state.game.player.xp >=
+    threshold
   ) {
-    state.game.player.xp -= threshold;
-    state.game.player.level += 1;
+    state.game.player.xp -=
+      threshold;
+
+    state.game.player.level +=
+      1;
   }
 }
 
@@ -345,21 +466,28 @@ function buyPotion() {
     cfg.shop.potion_heal
   );
 
+  const maxHp = Number(
+    cfg.player.max_hp
+  );
+
   if (
     g.player.gold < cost ||
-    g.player.hp >= Number(cfg.player.max_hp)
+    g.player.hp >= maxHp
   ) {
     return;
   }
 
   g.player.gold -= cost;
 
-  g.player.hp = Math.min(
-    Number(cfg.player.max_hp),
-    g.player.hp + heal
-  );
+  g.player.hp =
+    Math.min(
+      maxHp,
+      g.player.hp + heal
+    );
 
-  g.player.inventory.push("potion");
+  g.player.inventory.push(
+    "potion"
+  );
 
   g.battle.log.push(
     `Potion kullanıldı: +${heal} can.`
@@ -372,57 +500,80 @@ function renderGame() {
   const cfg = state.data.game;
   const g = state.game;
 
-  if (!g) return;
+  if (!g) {
+    return;
+  }
 
-  document.getElementById("gameTitle").textContent =
-    cfg.title;
+  document.getElementById(
+    "gameTitle"
+  ).textContent = cfg.title;
 
-  document.getElementById("level").textContent =
+  document.getElementById(
+    "level"
+  ).textContent =
     g.player.level;
 
-  document.getElementById("xp").textContent =
+  document.getElementById(
+    "xp"
+  ).textContent =
     g.player.xp;
 
-  document.getElementById("gold").textContent =
+  document.getElementById(
+    "gold"
+  ).textContent =
     g.player.gold;
 
-  document.getElementById("playerHpText").textContent =
+  document.getElementById(
+    "playerHpText"
+  ).textContent =
     `${g.player.hp} / ${cfg.player.max_hp} HP`;
 
-  document.getElementById("playerHpBar").style.width =
-    `${
-      Math.max(
-        0,
-        Math.min(
-          100,
-          (g.player.hp / cfg.player.max_hp) * 100
-        )
+  document.getElementById(
+    "playerHpBar"
+  ).style.width =
+    `${Math.max(
+      0,
+      Math.min(
+        100,
+        g.player.hp /
+          cfg.player.max_hp *
+          100
       )
-    }%`;
+    )}%`;
 
-  document.getElementById("playerMeta").textContent =
+  document.getElementById(
+    "playerMeta"
+  ).textContent =
     `${g.player.energy} enerji • ${g.player.gold} altın`;
 
   const e = g.battle.enemy;
 
-  document.getElementById("enemyHpText").textContent =
+  document.getElementById(
+    "enemyHpText"
+  ).textContent =
     `${g.battle.enemyHp} / ${e.hp} HP`;
 
-  document.getElementById("enemyHpBar").style.width =
-    `${
-      Math.max(
-        0,
-        Math.min(
-          100,
-          (g.battle.enemyHp / e.hp) * 100
-        )
+  document.getElementById(
+    "enemyHpBar"
+  ).style.width =
+    `${Math.max(
+      0,
+      Math.min(
+        100,
+        g.battle.enemyHp /
+          e.hp *
+          100
       )
-    }%`;
+    )}%`;
 
-  document.getElementById("enemyMeta").textContent =
+  document.getElementById(
+    "enemyMeta"
+  ).textContent =
     `${e.name} • ${e.attack} saldırı`;
 
-  document.getElementById("log").innerHTML =
+  document.getElementById(
+    "log"
+  ).innerHTML =
     g.battle.log
       .slice(-8)
       .map(
@@ -434,61 +585,88 @@ function renderGame() {
       .join("");
 
   const actions =
-    document.getElementById("actions");
-
-  actions.innerHTML = cfg.actions
-    .map(
-      (action) => `
-    <button
-      class="action-btn"
-      ${g.battle.ended ? "disabled" : ""}
-      data-action="${escapeAttr(action.id)}"
-    >
-      <strong>
-        ${escapeHtml(action.name)}
-      </strong>
-
-      <span>
-        ${escapeHtml(action.description)}
-      </span>
-
-      <br>
-
-      <span class="action-cost">
-        ${Number(action.energy || 0)} enerji
-      </span>
-    </button>
-  `
-    )
-    .join("");
-      actions
-    .querySelectorAll("[data-action]")
-    .forEach((btn) =>
-      btn.addEventListener(
-        "click",
-        () => act(btn.dataset.action)
-      )
+    document.getElementById(
+      "actions"
     );
 
-  document.getElementById("potionInfo").textContent =
+  actions.innerHTML =
+    cfg.actions
+      .map(
+        (action) => `
+          <button
+            class="action-btn"
+            ${
+              g.battle.ended
+                ? "disabled"
+                : ""
+            }
+            data-action="${escapeAttr(
+              action.id
+            )}"
+          >
+            <strong>
+              ${escapeHtml(
+                action.name
+              )}
+            </strong>
+
+            <span>
+              ${escapeHtml(
+                action.description
+              )}
+            </span>
+
+            <br>
+
+            <span class="action-cost">
+              ${Number(
+                action.energy || 0
+              )} enerji
+            </span>
+          </button>
+        `
+      )
+      .join("");
+
+  actions
+    .querySelectorAll(
+      "[data-action]"
+    )
+    .forEach(
+      (button) => {
+        button.addEventListener(
+          "click",
+          () =>
+            act(
+              button.dataset.action
+            )
+        );
+      }
+    );
+
+  document.getElementById(
+    "potionInfo"
+  ).textContent =
     `${cfg.shop.potion_cost} altın → +${cfg.shop.potion_heal} HP`;
 }
 
 function escapeHtml(value) {
   return String(value).replace(
     /[&<>"]/g,
-    (ch) =>
+    (character) =>
       ({
         "&": "&amp;",
         "<": "&lt;",
         ">": "&gt;",
-        '"': "&quot;"
-      }[ch])
+        "\"": "&quot;"
+      })[character]
   );
 }
 
 function escapeAttr(value) {
-  return escapeHtml(value).replace(
+  return escapeHtml(
+    value
+  ).replace(
     /'/g,
     "&#39;"
   );
