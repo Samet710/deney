@@ -68,6 +68,13 @@ GAME_CONFIG: dict[str, Any] = {
             "energy": 3,
             "effects": [{"type": "heal", "amount": 20}],
         },
+        {
+            "id": "recharge",
+            "name": "Şarj",
+            "description": "Enerji toplayarak şarj olur.",
+            "energy": 0,
+            "effects": [{"type": "energy", "amount": 2}],
+        },
     ],
     "enemies": [
         {
