@@ -75,6 +75,13 @@ GAME_CONFIG: dict[str, Any] = {
             "energy": 0,
             "effects": [{"type": "energy", "amount": 2}],
         },
+        {
+            "id": "power_strike",
+            "name": "Güçlü Darbe",
+            "description": "Yüksek hasar verir ama daha fazla enerji harcar.",
+            "energy": 4,
+            "effects": [{"type": "damage", "amount": 2.0}],
+        },
     ],
     "enemies": [
         {
