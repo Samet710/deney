@@ -66,7 +66,7 @@ GAME_CONFIG: dict[str, Any] = {
             "name": "İyileş",
             "description": "Enerji harcayarak can yeniler.",
             "energy": 3,
-            "effects": [{"type": "heal", "amount": 20}],
+            "effects": [{"type": "heal", "amount": 30}],
         },
         {
             "id": "recharge",

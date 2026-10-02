@@ -2198,5 +2198,417 @@
       "baseline_output": "=== SELF TEST ===\n{\"ok\": true, \"checks\": [\"battle starts and attack damages enemy\", \"heal restores hp\", \"guard creates a real shield and reduces damage\", \"win grants progression rewards\", \"loss state is reachable\", \"shop potion changes real state\", \"every action has a browser-executable positive effect\"]}\n\n=== EXPORT ===\nweb export: /tmp/autonom-export-5ha_wybw/docs/data.json\n\n=== BASELINE BEHAVIOR ===\n{\"actions\": {\"attack\": {\"after\": {\"ended\": false, \"enemy_hp\": 99988, \"energy\": 1, \"gold\": 12, \"hp\": 100, \"level\": 1, \"result\": null, \"shield\": 0, \"xp\": 0}, \"before\": {\"enemy_hp\": 100000, \"energy\": 2, \"gold\": 12, \"hp\": 100, \"level\": 1, \"shield\": 0, \"xp\": 0}}, \"guard\": {\"after\": {\"ended\": false, \"enemy_hp\": 100000, \"energy\": 2, \"gold\": 12, \"hp\": 100, \"level\": 1, \"result\": null, \"shield\": 12, \"xp\": 0}, \"before\": {\"enemy_hp\": 100000, \"energy\": 0, \"gold\": 12, \"hp\": 100, \"level\": 1, \"shield\": 0, \"xp\": 0}}, \"heal\": {\"after\": {\"ended\": false, \"enemy_hp\": 100000, \"energy\": 1, \"gold\": 12, \"hp\": 70, \"level\": 1, \"result\": null, \"shield\": 0, \"xp\": 0}, \"before\": {\"enemy_hp\": 100000, \"energy\": 3, \"gold\": 12, \"hp\": 50, \"level\": 1, \"shield\": 0, \"xp\": 0}}, \"power_strike\": {\"after\": {\"ended\": false, \"enemy_hp\": 99976, \"energy\": 1, \"gold\": 12, \"hp\": 100, \"level\": 1, \"result\": null, \"shield\": 0, \"xp\": 0}, \"before\": {\"enemy_hp\": 100000, \"energy\": 4, \"gold\": 12, \"hp\": 100, \"level\": 1, \"shield\": 0, \"xp\": 0}}, \"recharge\": {\"after\": {\"ended\": false, \"enemy_hp\": 100000, \"energy\": 3, \"gold\": 12, \"hp\": 100, \"level\": 1, \"result\": null, \"shield\": 0, \"xp\": 0}, \"before\": {\"enemy_hp\": 100000, \"energy\": 0, \"gold\": 12, \"hp\": 100, \"level\": 1, \"shield\": 0, \"xp\": 0}}}, \"enemies\": [{\"attack\": 8, \"defense\": 1, \"gold\": 6, \"hp\": 54, \"id\": \"slime\", \"xp\": 24}, {\"attack\": 11, \"defense\": 2, \"gold\": 9, \"hp\": 72, \"id\": \"drone\", \"xp\": 32}, {\"attack\": 14, \"defense\": 3, \"gold\": 13, \"hp\": 92, \"id\": \"warden\", \"xp\": 44}], \"loss\": {\"after\": {\"level\": 1, \"result\": \"loss\", \"xp\": 8}, \"before\": {\"level\": 1, \"xp\": 0}}, \"player\": {\"base_attack\": 12, \"base_defense\": 2, \"max_energy\": 6, \"max_hp\": 100}, \"progression\": {\"gold_per_win\": 9, \"heal_after_battle\": 18, \"xp_per_loss\": 8, \"xp_per_win\": 35, \"xp_to_level\": 100}, \"shop\": {\"after\": {\"gold\": 4, \"hp\": 74, \"inventory\": [\"potion\"]}, \"before\": {\"gold\": 12, \"hp\": 50, \"inventory\": []}, \"ok\": true}, \"win\": {\"after\": {\"gold\": 18, \"hp\": 100, \"level\": 1, \"result\": \"win\", \"xp\": 24}, \"before\": {\"gold\": 12, \"hp\": 100, \"level\": 1, \"xp\": 0}}}\n",
       "candidate_output": "=== SELF TEST ===\n{\"ok\": true, \"checks\": [\"battle starts and attack damages enemy\", \"heal restores hp\", \"guard creates a real shield and reduces damage\", \"win grants progression rewards\", \"loss state is reachable\", \"shop potion changes real state\", \"every action has a browser-executable positive effect\"]}\n\n=== EXPORT ===\nweb export: /tmp/autonom-export-me8y_gdh/docs/data.json\n\n=== CANDIDATE BEHAVIOR ===\n{\"actions\": {\"attack\": {\"after\": {\"ended\": false, \"enemy_hp\": 99988, \"energy\": 1, \"gold\": 12, \"hp\": 100, \"level\": 1, \"result\": null, \"shield\": 0, \"xp\": 0}, \"before\": {\"enemy_hp\": 100000, \"energy\": 2, \"gold\": 12, \"hp\": 100, \"level\": 1, \"shield\": 0, \"xp\": 0}}, \"guard\": {\"after\": {\"ended\": false, \"enemy_hp\": 100000, \"energy\": 2, \"gold\": 12, \"hp\": 100, \"level\": 1, \"result\": null, \"shield\": 12, \"xp\": 0}, \"before\": {\"enemy_hp\": 100000, \"energy\": 0, \"gold\": 12, \"hp\": 100, \"level\": 1, \"shield\": 0, \"xp\": 0}}, \"heal\": {\"after\": {\"ended\": false, \"enemy_hp\": 100000, \"energy\": 1, \"gold\": 12, \"hp\": 70, \"level\": 1, \"result\": null, \"shield\": 0, \"xp\": 0}, \"before\": {\"enemy_hp\": 100000, \"energy\": 3, \"gold\": 12, \"hp\": 50, \"level\": 1, \"shield\": 0, \"xp\": 0}}, \"power_strike\": {\"after\": {\"ended\": false, \"enemy_hp\": 99976, \"energy\": 1, \"gold\": 12, \"hp\": 100, \"level\": 1, \"result\": null, \"shield\": 0, \"xp\": 0}, \"before\": {\"enemy_hp\": 100000, \"energy\": 4, \"gold\": 12, \"hp\": 100, \"level\": 1, \"shield\": 0, \"xp\": 0}}, \"recharge\": {\"after\": {\"ended\": false, \"enemy_hp\": 100000, \"energy\": 3, \"gold\": 12, \"hp\": 100, \"level\": 1, \"result\": null, \"shield\": 0, \"xp\": 0}, \"before\": {\"enemy_hp\": 100000, \"energy\": 0, \"gold\": 12, \"hp\": 100, \"level\": 1, \"shield\": 0, \"xp\": 0}}}, \"enemies\": [{\"attack\": 8, \"defense\": 1, \"gold\": 6, \"hp\": 54, \"id\": \"slime\", \"xp\": 24}, {\"attack\": 11, \"defense\": 2, \"gold\": 9, \"hp\": 72, \"id\": \"drone\", \"xp\": 32}, {\"attack\": 14, \"defense\": 3, \"gold\": 13, \"hp\": 92, \"id\": \"warden\", \"xp\": 44}], \"loss\": {\"after\": {\"level\": 1, \"result\": \"loss\", \"xp\": 8}, \"before\": {\"level\": 1, \"xp\": 0}}, \"player\": {\"base_attack\": 12, \"base_defense\": 2, \"max_energy\": 6, \"max_hp\": 100}, \"progression\": {\"gold_per_win\": 9, \"heal_after_battle\": 18, \"xp_per_loss\": 8, \"xp_per_win\": 35, \"xp_to_level\": 100}, \"shop\": {\"after\": {\"gold\": 4, \"hp\": 74, \"inventory\": [\"potion\"]}, \"before\": {\"gold\": 12, \"hp\": 50, \"inventory\": []}, \"ok\": true}, \"win\": {\"after\": {\"gold\": 18, \"hp\": 100, \"level\": 1, \"result\": \"win\", \"xp\": 24}, \"before\": {\"gold\": 12, \"hp\": 100, \"level\": 1, \"xp\": 0}}}\n"
     }
+  },
+  {
+    "schema": 2,
+    "generation": 23,
+    "previous_generation": 22,
+    "status": "ACCEPTED",
+    "summary": "İyileşme eyleminin can yenileme miktarını artırır, oyuncuların can yenileme eylemini kullanarak canlarını daha hızlı bir şekilde yenileyebilmelerini sağlar.",
+    "reason": "Bu değişiklik, oyuncuların can yenileme eylemini kullanarak canlarını daha hızlı bir şekilde yenileyebilmelerini sağlayarak can yönetimini iyileştirir ve savunma stratejilerini daha esnek hale getirir. Artan can yenileme miktarı, oyuncuların can yenileme eylemini daha az sık kullanarak daha fazla can yenileme hakkı elde etmelerini sağlar ve böylece can yenileme eylemini daha verimli bir şekilde kullanmalarını sağlar.",
+    "verification": {
+      "schema": 2,
+      "accepted": true,
+      "generation_before": 22,
+      "summary": "İyileşme eyleminin can yenileme miktarını artırır, oyuncuların can yenileme eylemini kullanarak canlarını daha hızlı bir şekilde yenileyebilmelerini sağlar.",
+      "mavi_reason": "Bu değişiklik, oyuncuların can yenileme eylemini kullanarak canlarını daha hızlı bir şekilde yenileyebilmelerini sağlayarak can yönetimini iyileştirir ve savunma stratejilerini daha esnek hale getirir. Artan can yenileme miktarı, oyuncuların can yenileme eylemini daha az sık kullanarak daha fazla can yenileme hakkı elde etmelerini sağlar ve böylece can yenileme eylemini daha verimli bir şekilde kullanmalarını sağlar.",
+      "claimed_change": {
+        "kind": "action",
+        "id": "heal"
+      },
+      "static_problems": [],
+      "execution_problems": [],
+      "gameplay_validation_problems": [],
+      "baseline_behavior": {
+        "actions": {
+          "attack": {
+            "after": {
+              "ended": false,
+              "enemy_hp": 99988,
+              "energy": 1,
+              "gold": 12,
+              "hp": 100,
+              "level": 1,
+              "result": null,
+              "shield": 0,
+              "xp": 0
+            },
+            "before": {
+              "enemy_hp": 100000,
+              "energy": 2,
+              "gold": 12,
+              "hp": 100,
+              "level": 1,
+              "shield": 0,
+              "xp": 0
+            }
+          },
+          "guard": {
+            "after": {
+              "ended": false,
+              "enemy_hp": 100000,
+              "energy": 2,
+              "gold": 12,
+              "hp": 100,
+              "level": 1,
+              "result": null,
+              "shield": 12,
+              "xp": 0
+            },
+            "before": {
+              "enemy_hp": 100000,
+              "energy": 0,
+              "gold": 12,
+              "hp": 100,
+              "level": 1,
+              "shield": 0,
+              "xp": 0
+            }
+          },
+          "heal": {
+            "after": {
+              "ended": false,
+              "enemy_hp": 100000,
+              "energy": 1,
+              "gold": 12,
+              "hp": 70,
+              "level": 1,
+              "result": null,
+              "shield": 0,
+              "xp": 0
+            },
+            "before": {
+              "enemy_hp": 100000,
+              "energy": 3,
+              "gold": 12,
+              "hp": 50,
+              "level": 1,
+              "shield": 0,
+              "xp": 0
+            }
+          },
+          "power_strike": {
+            "after": {
+              "ended": false,
+              "enemy_hp": 99976,
+              "energy": 1,
+              "gold": 12,
+              "hp": 100,
+              "level": 1,
+              "result": null,
+              "shield": 0,
+              "xp": 0
+            },
+            "before": {
+              "enemy_hp": 100000,
+              "energy": 4,
+              "gold": 12,
+              "hp": 100,
+              "level": 1,
+              "shield": 0,
+              "xp": 0
+            }
+          },
+          "recharge": {
+            "after": {
+              "ended": false,
+              "enemy_hp": 100000,
+              "energy": 3,
+              "gold": 12,
+              "hp": 100,
+              "level": 1,
+              "result": null,
+              "shield": 0,
+              "xp": 0
+            },
+            "before": {
+              "enemy_hp": 100000,
+              "energy": 0,
+              "gold": 12,
+              "hp": 100,
+              "level": 1,
+              "shield": 0,
+              "xp": 0
+            }
+          }
+        },
+        "enemies": [
+          {
+            "attack": 8,
+            "defense": 1,
+            "gold": 6,
+            "hp": 54,
+            "id": "slime",
+            "xp": 24
+          },
+          {
+            "attack": 11,
+            "defense": 2,
+            "gold": 9,
+            "hp": 72,
+            "id": "drone",
+            "xp": 32
+          },
+          {
+            "attack": 14,
+            "defense": 3,
+            "gold": 13,
+            "hp": 92,
+            "id": "warden",
+            "xp": 44
+          }
+        ],
+        "loss": {
+          "after": {
+            "level": 1,
+            "result": "loss",
+            "xp": 8
+          },
+          "before": {
+            "level": 1,
+            "xp": 0
+          }
+        },
+        "player": {
+          "base_attack": 12,
+          "base_defense": 2,
+          "max_energy": 6,
+          "max_hp": 100
+        },
+        "progression": {
+          "gold_per_win": 9,
+          "heal_after_battle": 18,
+          "xp_per_loss": 8,
+          "xp_per_win": 35,
+          "xp_to_level": 100
+        },
+        "shop": {
+          "after": {
+            "gold": 4,
+            "hp": 74,
+            "inventory": [
+              "potion"
+            ]
+          },
+          "before": {
+            "gold": 12,
+            "hp": 50,
+            "inventory": []
+          },
+          "ok": true
+        },
+        "win": {
+          "after": {
+            "gold": 18,
+            "hp": 100,
+            "level": 1,
+            "result": "win",
+            "xp": 24
+          },
+          "before": {
+            "gold": 12,
+            "hp": 100,
+            "level": 1,
+            "xp": 0
+          }
+        }
+      },
+      "candidate_behavior": {
+        "actions": {
+          "attack": {
+            "after": {
+              "ended": false,
+              "enemy_hp": 99988,
+              "energy": 1,
+              "gold": 12,
+              "hp": 100,
+              "level": 1,
+              "result": null,
+              "shield": 0,
+              "xp": 0
+            },
+            "before": {
+              "enemy_hp": 100000,
+              "energy": 2,
+              "gold": 12,
+              "hp": 100,
+              "level": 1,
+              "shield": 0,
+              "xp": 0
+            }
+          },
+          "guard": {
+            "after": {
+              "ended": false,
+              "enemy_hp": 100000,
+              "energy": 2,
+              "gold": 12,
+              "hp": 100,
+              "level": 1,
+              "result": null,
+              "shield": 12,
+              "xp": 0
+            },
+            "before": {
+              "enemy_hp": 100000,
+              "energy": 0,
+              "gold": 12,
+              "hp": 100,
+              "level": 1,
+              "shield": 0,
+              "xp": 0
+            }
+          },
+          "heal": {
+            "after": {
+              "ended": false,
+              "enemy_hp": 100000,
+              "energy": 1,
+              "gold": 12,
+              "hp": 80,
+              "level": 1,
+              "result": null,
+              "shield": 0,
+              "xp": 0
+            },
+            "before": {
+              "enemy_hp": 100000,
+              "energy": 3,
+              "gold": 12,
+              "hp": 50,
+              "level": 1,
+              "shield": 0,
+              "xp": 0
+            }
+          },
+          "power_strike": {
+            "after": {
+              "ended": false,
+              "enemy_hp": 99976,
+              "energy": 1,
+              "gold": 12,
+              "hp": 100,
+              "level": 1,
+              "result": null,
+              "shield": 0,
+              "xp": 0
+            },
+            "before": {
+              "enemy_hp": 100000,
+              "energy": 4,
+              "gold": 12,
+              "hp": 100,
+              "level": 1,
+              "shield": 0,
+              "xp": 0
+            }
+          },
+          "recharge": {
+            "after": {
+              "ended": false,
+              "enemy_hp": 100000,
+              "energy": 3,
+              "gold": 12,
+              "hp": 100,
+              "level": 1,
+              "result": null,
+              "shield": 0,
+              "xp": 0
+            },
+            "before": {
+              "enemy_hp": 100000,
+              "energy": 0,
+              "gold": 12,
+              "hp": 100,
+              "level": 1,
+              "shield": 0,
+              "xp": 0
+            }
+          }
+        },
+        "enemies": [
+          {
+            "attack": 8,
+            "defense": 1,
+            "gold": 6,
+            "hp": 54,
+            "id": "slime",
+            "xp": 24
+          },
+          {
+            "attack": 11,
+            "defense": 2,
+            "gold": 9,
+            "hp": 72,
+            "id": "drone",
+            "xp": 32
+          },
+          {
+            "attack": 14,
+            "defense": 3,
+            "gold": 13,
+            "hp": 92,
+            "id": "warden",
+            "xp": 44
+          }
+        ],
+        "loss": {
+          "after": {
+            "level": 1,
+            "result": "loss",
+            "xp": 8
+          },
+          "before": {
+            "level": 1,
+            "xp": 0
+          }
+        },
+        "player": {
+          "base_attack": 12,
+          "base_defense": 2,
+          "max_energy": 6,
+          "max_hp": 100
+        },
+        "progression": {
+          "gold_per_win": 9,
+          "heal_after_battle": 18,
+          "xp_per_loss": 8,
+          "xp_per_win": 35,
+          "xp_to_level": 100
+        },
+        "shop": {
+          "after": {
+            "gold": 4,
+            "hp": 74,
+            "inventory": [
+              "potion"
+            ]
+          },
+          "before": {
+            "gold": 12,
+            "hp": 50,
+            "inventory": []
+          },
+          "ok": true
+        },
+        "win": {
+          "after": {
+            "gold": 18,
+            "hp": 100,
+            "level": 1,
+            "result": "win",
+            "xp": 24
+          },
+          "before": {
+            "gold": 12,
+            "hp": 100,
+            "level": 1,
+            "xp": 0
+          }
+        }
+      },
+      "baseline_output": "=== SELF TEST ===\n{\"ok\": true, \"checks\": [\"battle starts and attack damages enemy\", \"heal restores hp\", \"guard creates a real shield and reduces damage\", \"win grants progression rewards\", \"loss state is reachable\", \"shop potion changes real state\", \"every action has a browser-executable positive effect\"]}\n\n=== EXPORT ===\nweb export: /tmp/autonom-export-b_eglsu5/docs/data.json\n\n=== BASELINE BEHAVIOR ===\n{\"actions\": {\"attack\": {\"after\": {\"ended\": false, \"enemy_hp\": 99988, \"energy\": 1, \"gold\": 12, \"hp\": 100, \"level\": 1, \"result\": null, \"shield\": 0, \"xp\": 0}, \"before\": {\"enemy_hp\": 100000, \"energy\": 2, \"gold\": 12, \"hp\": 100, \"level\": 1, \"shield\": 0, \"xp\": 0}}, \"guard\": {\"after\": {\"ended\": false, \"enemy_hp\": 100000, \"energy\": 2, \"gold\": 12, \"hp\": 100, \"level\": 1, \"result\": null, \"shield\": 12, \"xp\": 0}, \"before\": {\"enemy_hp\": 100000, \"energy\": 0, \"gold\": 12, \"hp\": 100, \"level\": 1, \"shield\": 0, \"xp\": 0}}, \"heal\": {\"after\": {\"ended\": false, \"enemy_hp\": 100000, \"energy\": 1, \"gold\": 12, \"hp\": 70, \"level\": 1, \"result\": null, \"shield\": 0, \"xp\": 0}, \"before\": {\"enemy_hp\": 100000, \"energy\": 3, \"gold\": 12, \"hp\": 50, \"level\": 1, \"shield\": 0, \"xp\": 0}}, \"power_strike\": {\"after\": {\"ended\": false, \"enemy_hp\": 99976, \"energy\": 1, \"gold\": 12, \"hp\": 100, \"level\": 1, \"result\": null, \"shield\": 0, \"xp\": 0}, \"before\": {\"enemy_hp\": 100000, \"energy\": 4, \"gold\": 12, \"hp\": 100, \"level\": 1, \"shield\": 0, \"xp\": 0}}, \"recharge\": {\"after\": {\"ended\": false, \"enemy_hp\": 100000, \"energy\": 3, \"gold\": 12, \"hp\": 100, \"level\": 1, \"result\": null, \"shield\": 0, \"xp\": 0}, \"before\": {\"enemy_hp\": 100000, \"energy\": 0, \"gold\": 12, \"hp\": 100, \"level\": 1, \"shield\": 0, \"xp\": 0}}}, \"enemies\": [{\"attack\": 8, \"defense\": 1, \"gold\": 6, \"hp\": 54, \"id\": \"slime\", \"xp\": 24}, {\"attack\": 11, \"defense\": 2, \"gold\": 9, \"hp\": 72, \"id\": \"drone\", \"xp\": 32}, {\"attack\": 14, \"defense\": 3, \"gold\": 13, \"hp\": 92, \"id\": \"warden\", \"xp\": 44}], \"loss\": {\"after\": {\"level\": 1, \"result\": \"loss\", \"xp\": 8}, \"before\": {\"level\": 1, \"xp\": 0}}, \"player\": {\"base_attack\": 12, \"base_defense\": 2, \"max_energy\": 6, \"max_hp\": 100}, \"progression\": {\"gold_per_win\": 9, \"heal_after_battle\": 18, \"xp_per_loss\": 8, \"xp_per_win\": 35, \"xp_to_level\": 100}, \"shop\": {\"after\": {\"gold\": 4, \"hp\": 74, \"inventory\": [\"potion\"]}, \"before\": {\"gold\": 12, \"hp\": 50, \"inventory\": []}, \"ok\": true}, \"win\": {\"after\": {\"gold\": 18, \"hp\": 100, \"level\": 1, \"result\": \"win\", \"xp\": 24}, \"before\": {\"gold\": 12, \"hp\": 100, \"level\": 1, \"xp\": 0}}}\n",
+      "candidate_output": "=== SELF TEST ===\n{\"ok\": true, \"checks\": [\"battle starts and attack damages enemy\", \"heal restores hp\", \"guard creates a real shield and reduces damage\", \"win grants progression rewards\", \"loss state is reachable\", \"shop potion changes real state\", \"every action has a browser-executable positive effect\"]}\n\n=== EXPORT ===\nweb export: /tmp/autonom-export-6da1crya/docs/data.json\n\n=== CANDIDATE BEHAVIOR ===\n{\"actions\": {\"attack\": {\"after\": {\"ended\": false, \"enemy_hp\": 99988, \"energy\": 1, \"gold\": 12, \"hp\": 100, \"level\": 1, \"result\": null, \"shield\": 0, \"xp\": 0}, \"before\": {\"enemy_hp\": 100000, \"energy\": 2, \"gold\": 12, \"hp\": 100, \"level\": 1, \"shield\": 0, \"xp\": 0}}, \"guard\": {\"after\": {\"ended\": false, \"enemy_hp\": 100000, \"energy\": 2, \"gold\": 12, \"hp\": 100, \"level\": 1, \"result\": null, \"shield\": 12, \"xp\": 0}, \"before\": {\"enemy_hp\": 100000, \"energy\": 0, \"gold\": 12, \"hp\": 100, \"level\": 1, \"shield\": 0, \"xp\": 0}}, \"heal\": {\"after\": {\"ended\": false, \"enemy_hp\": 100000, \"energy\": 1, \"gold\": 12, \"hp\": 80, \"level\": 1, \"result\": null, \"shield\": 0, \"xp\": 0}, \"before\": {\"enemy_hp\": 100000, \"energy\": 3, \"gold\": 12, \"hp\": 50, \"level\": 1, \"shield\": 0, \"xp\": 0}}, \"power_strike\": {\"after\": {\"ended\": false, \"enemy_hp\": 99976, \"energy\": 1, \"gold\": 12, \"hp\": 100, \"level\": 1, \"result\": null, \"shield\": 0, \"xp\": 0}, \"before\": {\"enemy_hp\": 100000, \"energy\": 4, \"gold\": 12, \"hp\": 100, \"level\": 1, \"shield\": 0, \"xp\": 0}}, \"recharge\": {\"after\": {\"ended\": false, \"enemy_hp\": 100000, \"energy\": 3, \"gold\": 12, \"hp\": 100, \"level\": 1, \"result\": null, \"shield\": 0, \"xp\": 0}, \"before\": {\"enemy_hp\": 100000, \"energy\": 0, \"gold\": 12, \"hp\": 100, \"level\": 1, \"shield\": 0, \"xp\": 0}}}, \"enemies\": [{\"attack\": 8, \"defense\": 1, \"gold\": 6, \"hp\": 54, \"id\": \"slime\", \"xp\": 24}, {\"attack\": 11, \"defense\": 2, \"gold\": 9, \"hp\": 72, \"id\": \"drone\", \"xp\": 32}, {\"attack\": 14, \"defense\": 3, \"gold\": 13, \"hp\": 92, \"id\": \"warden\", \"xp\": 44}], \"loss\": {\"after\": {\"level\": 1, \"result\": \"loss\", \"xp\": 8}, \"before\": {\"level\": 1, \"xp\": 0}}, \"player\": {\"base_attack\": 12, \"base_defense\": 2, \"max_energy\": 6, \"max_hp\": 100}, \"progression\": {\"gold_per_win\": 9, \"heal_after_battle\": 18, \"xp_per_loss\": 8, \"xp_per_win\": 35, \"xp_to_level\": 100}, \"shop\": {\"after\": {\"gold\": 4, \"hp\": 74, \"inventory\": [\"potion\"]}, \"before\": {\"gold\": 12, \"hp\": 50, \"inventory\": []}, \"ok\": true}, \"win\": {\"after\": {\"gold\": 18, \"hp\": 100, \"level\": 1, \"result\": \"win\", \"xp\": 24}, \"before\": {\"gold\": 12, \"hp\": 100, \"level\": 1, \"xp\": 0}}}\n"
+    }
   }
 ]
