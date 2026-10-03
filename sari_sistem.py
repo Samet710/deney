@@ -57,7 +57,7 @@ GAME_CONFIG: dict[str, Any] = {
             "description": "Güçlü bir kalkan oluşturur ve enerji kazandırır.",
             "energy": 0,
             "effects": [
-                {"type": "shield", "amount": 12},
+                {"type": "shield", "amount": 15},
                 {"type": "energy", "amount": 1},
             ],
         },
